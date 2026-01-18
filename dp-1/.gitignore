@@ -1,0 +1,26 @@
+# Synthesis temporary files
+synthesis-work/
+*.log
+*.vcd
+*.fst
+*.out
+
+# Yosys outputs
+synth_netlist.v
+*.blif
+
+# OpenLANE outputs (if run locally)
+runs/
+*.csv
+
+# Python cache
+__pycache__/
+*.pyc
+.mypy_cache/
+
+# Editor files
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
