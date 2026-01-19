@@ -7,6 +7,7 @@ This file contains all Mermaid diagrams for the UART peripheral. These diagrams 
 ## 1. Top-Level System Architecture
 
 ```mermaid
+%%{init: {'look':'handDrawn'}}%%
 graph TB
     subgraph TinyQV["TinyQV RISC-V Core"]
         CPU[CPU Pipeline]
@@ -62,6 +63,7 @@ graph TB
 ## 2. Baud Rate Generator Module
 
 ```mermaid
+%%{init: {'look':'handDrawn'}}%%
 graph LR
     subgraph Inputs
         CLK[clk<br/>70 MHz]
@@ -97,6 +99,7 @@ graph LR
 ## 3. UART Transmitter - State Machine
 
 ```mermaid
+%%{init: {'look':'handDrawn'}}%%
 stateDiagram-v2
     [*] --> IDLE
     IDLE --> START : tx_start = 1
@@ -132,6 +135,7 @@ stateDiagram-v2
 ## 4. UART Transmitter - Block Diagram
 
 ```mermaid
+%%{init: {'look':'handDrawn'}}%%
 graph TB
     subgraph TX_Inputs["TX Module Inputs"]
         CLK_TX[clk]
@@ -168,6 +172,7 @@ graph TB
 ## 5. UART Receiver - State Machine
 
 ```mermaid
+%%{init: {'look':'handDrawn'}}%%
 stateDiagram-v2
     [*] --> IDLE
     IDLE --> START : start_detected (1→0)
@@ -205,6 +210,7 @@ stateDiagram-v2
 ## 6. UART Receiver - Block Diagram
 
 ```mermaid
+%%{init: {'look':'handDrawn'}}%%
 graph TB
     subgraph RX_Inputs["RX Module Inputs"]
         CLK_RX[clk]
@@ -253,6 +259,7 @@ graph TB
 ## 7. Register Interface - Memory Map
 
 ```mermaid
+%%{init: {'look':'handDrawn'}}%%
 graph TB
     subgraph CPU_IF["CPU Interface"]
         ADDR[address<br/>31:0]
@@ -296,6 +303,7 @@ graph TB
 ## 8. Transaction Sequence - Write (Send Data)
 
 ```mermaid
+%%{init: {'look':'handDrawn'}}%%
 sequenceDiagram
     participant CPU
     participant RegIF as Register Interface
@@ -330,6 +338,7 @@ sequenceDiagram
 ## 9. Transaction Sequence - Read (Receive Data)
 
 ```mermaid
+%%{init: {'look':'handDrawn'}}%%
 sequenceDiagram
     participant Wire as RX Wire
     participant RXMod as RX Module
@@ -374,6 +383,7 @@ sequenceDiagram
 ## 10. Module Hierarchy
 
 ```mermaid
+%%{init: {'look':'handDrawn'}}%%
 graph TD
     TOP[tt_um_tqv_peripheral_harness<br/>Top-Level Wrapper]
     
