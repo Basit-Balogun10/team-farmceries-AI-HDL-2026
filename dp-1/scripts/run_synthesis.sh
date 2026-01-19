@@ -5,9 +5,17 @@
 # 2. Generates synthesis scripts
 # 3. Runs Yosys synthesis
 # 4. Optionally preps for OpenLANE PPA analysis
-# 5. Cleans up temporary files (optional)
+# 5. Cleans up temporary files (use --cleanup flag)
+#
+# Usage: ./run_synthesis.sh [--cleanup]
 
 set -e  # Exit on any error
+
+# Parse arguments
+CLEANUP=false
+if [[ "$1" == "--cleanup" ]]; then
+    CLEANUP=true
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -120,38 +128,47 @@ cd ..
 # Step 5: Generate OpenLANE config.json
 echo -e "${YELLOW}[5/6] Generating OpenLANE config.json...${NC}"
 
-cat > "$WORK_DIR/config.json" << EOF
-{
-  "DESIGN_NAME": "$TOP_MODULE",
-  "VERILOG_FILES": [
-    "dir::reclocking.sv",
-    "dir::synchronizer.sv",
-    "dir::rising_edge_detector.sv",
-    "dir::falling_edge_detector.sv",
-    "dir::spi_reg.sv",
-    "dir::alu.v",
-    "dir::core.v",
-    "dir::decode.v",
-    "dir::cpu.v",
-    "dir::register.v",
-    "dir::latch_reg.v",
-    "dir::mem_ctrl.v",
-    "dir::qspi_ctrl.v",
-    "dir::qspi_flash.v",
-    "dir::peripheral.v",
-    "dir::counter.v",
-    "dir::time.v",
-    "dir::tinyqv.v",
-    "dir::tt_wrapper.v"
-  ],
-  "CLOCK_PERIOD": 20.0,
-  "CLOCK_PORT": "clk",
-  "CLOCK_NET": "clk",
-  "FP_SIZING": "absolute",
-  "DIE_AREA": "0 0 161.00 111.52",
-  "PL_TARGET_DENSITY": 0.75
-}
-EOF
+# Copy and modify the base config from peripheral/src/config.json
+# Remove JSON comment entries (keys that are "//") and add our specific fields
+python3 << PYTHON_CONFIG
+import json
+
+# Load the base config
+with open('peripheral/src/config.json', 'r') as f:
+    config = json.load(f)
+
+# Remove comment keys
+config = {k: v for k, v in config.items() if k != '//'}
+
+# Override/add our specific fields
+config['DESIGN_NAME'] = '$TOP_MODULE'
+config['VERILOG_FILES'] = [
+    'dir::reclocking.sv',
+    'dir::synchronizer.sv',
+    'dir::rising_edge_detector.sv',
+    'dir::falling_edge_detector.sv',
+    'dir::spi_reg.sv',
+    'dir::alu.v',
+    'dir::core.v',
+    'dir::decode.v',
+    'dir::cpu.v',
+    'dir::register.v',
+    'dir::latch_reg.v',
+    'dir::mem_ctrl.v',
+    'dir::qspi_ctrl.v',
+    'dir::qspi_flash.v',
+    'dir::peripheral.v',
+    'dir::counter.v',
+    'dir::time.v',
+    'dir::tinyqv.v',
+    'dir::tt_wrapper.v'
+]
+config['DIE_AREA'] = '0 0 161.00 111.52'
+
+# Write to synthesis-work
+with open('$WORK_DIR/config.json', 'w') as f:
+    json.dump(config, f, indent=2)
+PYTHON_CONFIG
 
 echo -e "${GREEN}  ✓ config.json created${NC}"
 
@@ -173,18 +190,17 @@ echo "     b. Run: cd OpenLane && make mount"
 echo "     c. Run: ./flow.tcl -design $WORK_DIR"
 echo ""
 echo "  3. To clean up this temporary directory:"
-echo "     Run: rm -rf $WORK_DIR"
+echo "     Run: rm -rf $WORK_DIR  OR  ./run_synthesis.sh --cleanup"
 echo ""
 
-# Optional: Ask user if they want to clean up
-read -p "Do you want to keep the synthesis-work directory? (y/n): " -n 1 -r
-echo ""
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+# Cleanup based on flag
+if [ "$CLEANUP" = true ]; then
     echo -e "${YELLOW}Cleaning up temporary files...${NC}"
     rm -rf "$WORK_DIR"
     echo -e "${GREEN}✓ Cleanup complete${NC}"
 else
     echo -e "${GREEN}✓ Files preserved in $WORK_DIR/${NC}"
+    echo -e "${YELLOW}  (Use --cleanup flag to auto-remove next time)${NC}"
 fi
 
 echo ""

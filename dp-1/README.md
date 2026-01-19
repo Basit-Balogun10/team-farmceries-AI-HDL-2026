@@ -4,12 +4,92 @@ Team implementation of a UART peripheral for the AI-HDL 2026 competition Design 
 
 ## Quick Start
 
+### Prerequisites
+
+**Required Tools:**
+- **Docker** - For running OpenLANE (PPA analysis)
+- **Yosys** - For RTL synthesis
+- **Python 3.8+** - For scripts and cocotb
+- **iverilog** - For simulation (if using cocotb)
+- **GTKWave** - For viewing waveforms (optional)
+- **KLayout** - For viewing GDSII layouts (optional)
+
+**For Full PPA Analysis:**
+- OpenLANE installation (tested with v1.0.2)
+- PDK (default: `~/.ciel/sky130A`)
+
+### Setup
+
 ```bash
-# 1. Verify synthesis works
+# 1. Clone and navigate to dp-1
+cd dp-1
+
+# 2. Set up Python environment (for cocotb testing)
+python3 -m venv venv
+source venv/bin/activate
+pip install cocotb==1.9.2
+
+# 3. Verify synthesis works
 ./scripts/run_synthesis.sh
 
-# 2. Run full PPA analysis (requires OpenLANE)
-./scripts/run_synthesis_and_ppa.sh ~/OpenLane
+# 4. Run cocotb tests
+cd peripheral/test
+make
+
+# 5. Run full PPA analysis (requires OpenLANE)
+cd ../..
+./scripts/run_synthesis_and_ppa.sh ~vlsi/tools/OpenLane --cleanup
+```
+
+### Script Usage
+
+```bash
+# Quick synthesis only (no PPA, ~10 seconds)
+./scripts/run_synthesis.sh [--cleanup]
+
+# Full synthesis + PPA analysis (~3-5 minutes)
+./scripts/run_synthesis_and_ppa.sh <openlane_path> [OPTIONS]
+
+# Options:
+#   --cleanup           Remove temporary files after completion
+#   --pdk-root <path>   Custom PDK location (default: $HOME/.ciel)
+
+# Examples:
+./scripts/run_synthesis_and_ppa.sh ~vlsi/tools/OpenLane --cleanup
+./scripts/run_synthesis_and_ppa.sh /path/to/OpenLane --pdk-root /custom/pdk
+```
+
+### Output Locations
+
+After running scripts, results are organized as follows:
+
+```
+dp-1/
+├── outputs/                  # Build logs (git-ignored)
+│   ├── synthesis.log        # Yosys synthesis log
+│   └── openlane.log         # OpenLANE flow log
+├── runs/                     # Full PPA results (kept in git)
+│   └── RUN_YYYY.MM.DD_HH.MM.SS/
+│       ├── reports/         # Timing, power, area reports
+│       │   └── metrics.csv  # Summary PPA metrics
+│       ├── results/
+│       │   └── final/
+│       │       └── gds/     # GDSII layout files
+│       └── logs/            # Detailed step-by-step logs
+└── synthesis-work/           # Temporary files (use --cleanup to remove)
+```
+
+### Viewing Results
+
+```bash
+# View GDSII layout
+klayout runs/RUN_*/results/final/gds/*.gds
+
+# View waveforms (from cocotb tests)
+gtkwave peripheral/test/tb.vcd
+
+# Check PPA metrics
+cat runs/RUN_*/reports/metrics.csv
 ```
 
 ## Project Structure
