@@ -52,9 +52,9 @@ graph TB
     EXT -->|ui_in 7| RX
     RX -->|user_interrupt| BUS
     
-    style TinyQV fill:#a8d5f2
-    style UART fill:#d4b896
-    style EXT fill:#b5d4a8
+    style TinyQV fill:#7a9fb8
+    style UART fill:#9d8860
+    style EXT fill:#7a9d72
 ```
 
 ---
@@ -88,8 +88,8 @@ graph LR
     CMP -->|Yes| RESET[Reset Counter]
     RESET --> CNT
     
-    style BaudGen fill:#d4b896
-    style TICK fill:#9ec49f
+    style BaudGen fill:#9d8860
+    style TICK fill:#6e8f70
 ```
 
 ---
@@ -159,8 +159,8 @@ graph TB
     MUX_TX --> TXOUT[tx_out<br/>Serial Output]
     FSM_TX --> TXBUSY[tx_busy<br/>Status Flag]
     
-    style TX_Logic fill:#b3d4ed
-    style TXOUT fill:#9ec49f
+    style TX_Logic fill:#7a9fb8
+    style TXOUT fill:#6e8f70
 ```
 
 ---
@@ -243,9 +243,9 @@ graph TB
     FSM_RX --> RXRDY[rx_ready<br/>Data Ready Flag]
     FSM_RX --> RXERR[rx_error<br/>Frame Error Flag]
     
-    style RX_Sync fill:#d4c299
-    style RX_Logic fill:#a8d5f2
-    style RXDATA fill:#9ec49f
+    style RX_Sync fill:#9d8f68
+    style RX_Logic fill:#7a9fb8
+    style RXDATA fill:#6e8f70
 ```
 
 ---
@@ -285,10 +285,10 @@ graph TB
     RXDAT_REG --> MUX
     MUX --> DOUT
     
-    style CTRL_REG fill:#b3d4ed
-    style STAT_REG fill:#d4c299
-    style TXDAT_REG fill:#d4b8db
-    style RXDAT_REG fill:#b5d4a8
+    style CTRL_REG fill:#7a9fb8
+    style STAT_REG fill:#9d8f68
+    style TXDAT_REG fill:#9d8aa8
+    style RXDAT_REG fill:#7a9d72
 ```
 
 ---
@@ -415,13 +415,13 @@ graph TD
     HARNESS --> SYNC2[synchronizer]
     HARNESS --> RECLK[reclocking]
     
-    style TOP fill:#a8d5f2
-    style PERIPH fill:#d4b896
-    style HARNESS fill:#d4b8db
-    style REGIF fill:#b5d4a8
-    style BAUD fill:#d4c299
-    style TX fill:#b3d4ed
-    style RX fill:#e6b8cc
+    style TOP fill:#7a9fb8
+    style PERIPH fill:#9d8860
+    style HARNESS fill:#9d8aa8
+    style REGIF fill:#7a9d72
+    style BAUD fill:#9d8f68
+    style TX fill:#7a9fb8
+    style RX fill:#b08599
 ```
 
 ---
