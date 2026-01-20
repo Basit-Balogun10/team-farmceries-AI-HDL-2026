@@ -2,6 +2,30 @@
 
 This directory contains the Verilog RTL for the UART peripheral implementation.
 
+## How This Integrates with peripheral.v
+
+**The Structure**:
+```
+peripheral.v (top-level, interfaces with tt_wrapper.v)
+    └── Instantiates UART modules from uart/ directory
+            ├── uart_baud_generator.v
+            ├── uart_tx.v
+            ├── uart_rx.v
+            └── uart_register_interface.v
+```
+
+**What You'll Do**:
+1. Build individual modules in `uart/` directory (Phase 2-5)
+2. Replace the `tqvp_example` module in `../peripheral.v` with UART implementation (Phase 6)
+3. Update `../tt_wrapper.v` line 41: `tqvp_example` → `tqvp_uart`
+
+**peripheral.v** is your **top-level UART peripheral** that:
+- Receives signals from TinyQV CPU (address, data_in, data_write_n, etc.)
+- Instantiates and connects the UART sub-modules from this directory
+- Sends UART TX on `uo_out[0]`, receives RX on `ui_in[7]`
+
+**tt_wrapper.v** handles the test harness (SPI interface) - you don't modify this much.
+
 ## Module Structure
 
 ```
@@ -10,9 +34,10 @@ uart/
 ├── uart_tx.v                   - Transmitter (parallel to serial)
 ├── uart_rx.v                   - Receiver (serial to parallel)
 ├── uart_register_interface.v  - CPU memory-mapped registers
-├── uart_peripheral.v           - Top-level integration
 └── lint.sh                     - Verilator linting script
 ```
+
+Note: We build these modules separately, then integrate them into `../peripheral.v`
 
 ## Quick Start
 
