@@ -416,6 +416,246 @@ These are the "control panel" the CPU uses to operate the UART peripheral.
 
 ---
 
+### 💡 Deep Dive: What is Memory Mapping?
+
+#### The Big Picture: CPU's View of the World
+
+Your TinyQV CPU sees **everything** as memory addresses. It doesn't care if it's reading/writing to:
+- Actual RAM (data storage)
+- ROM (program code)
+- Peripherals like UART (special hardware)
+
+**To the CPU, it's all just addresses!**
+
+```
+CPU's Address Space (Simplified):
+
+0x0000_0000 ─────────┐
+             ...     │  ← RAM (normal memory)
+0x0FFF_FFFF ─────────┤
+                     │
+0x1000_0000 ─────────┤
+  UART CTRL          │  ← UART Registers (memory-mapped peripheral!)
+  UART STATUS        │     NOT actual memory - it's hardware!
+  UART TX_DATA       │
+  UART RX_DATA       │
+0x1000_000F ─────────┤
+                     │
+0x2000_0000 ─────────┤
+             ...     │  ← More peripherals (SPI, I2C, etc.)
+0xFFFF_FFFF ─────────┘
+```
+
+#### What Happens When CPU Writes to 0x1000_0000?
+
+Let's trace a write operation step-by-step:
+
+**CPU Code (in C)**:
+```c
+// CPU wants to enable UART at 115200 baud
+*((volatile uint32_t *)0x10000000) = 0xC1;  // Write to address 0x10000000
+```
+
+**What the CPU does**:
+```
+1. CPU puts 0x10000000 on address bus
+2. CPU puts 0x000000C1 on data bus
+3. CPU asserts data_write_n = 0 (active low write signal)
+```
+
+**What the UART hardware does** (this is YOUR Verilog code!):
+```verilog
+always @(posedge clk) begin
+    // Address decoder: Is CPU talking to ME?
+    if (address == 32'h1000_0000 && !data_write_n) begin
+        // YES! CPU is writing to my CTRL register
+        ctrl_register <= data_in[7:0];  // Grab bottom 8 bits
+        
+        // Now extract the configuration
+        baud_sel <= data_in[7:4];   // Bits 7-4 → baud rate
+        enable   <= data_in[0];     // Bit 0 → enable
+    end
+end
+```
+
+**Result**: Your UART's `ctrl_register` now holds `0xC1`, and `enable` bit goes HIGH!
+
+---
+
+#### Memory-Mapped vs Regular Memory
+
+| Aspect | Regular Memory (RAM) | Memory-Mapped Register |
+|--------|---------------------|------------------------|
+| **What it is** | Array of storage cells | Hardware control interface |
+| **When you read** | Returns stored data | Returns current hardware status |
+| **When you write** | Stores data for later | **Triggers hardware action!** |
+| **Predictable?** | Yes - write 5, read 5 | No - write 5, might read something else! |
+| **Example** | `array[10] = 42;` | `UART_TX = 'A';` (triggers transmission!) |
+
+**Key difference**: Writing to memory-mapped registers **DOES SOMETHING** in hardware!
+
+---
+
+#### Your UART: The Complete Picture
+
+**Hardware Block Diagram**:
+```
+     TinyQV CPU
+         │
+         ├─── address[31:0] ────────┐
+         ├─── data_in[31:0] ────────┤
+         ├─── data_out[31:0] ───────┤
+         ├─── data_write_n ─────────┤
+         └─── data_read_n ──────────┤
+                                    │
+                            ┌───────▼────────┐
+                            │ Register       │
+                            │ Interface      │
+                            │ (Address       │
+                            │  Decoder)      │
+                            └───────┬────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+            ┌───────▼──────┐ ┌─────▼──────┐ ┌─────▼──────┐
+            │ CTRL Register│ │STATUS Reg  │ │TX_DATA Reg │ ...
+            │  0x00        │ │  0x04      │ │  0x08      │
+            └───────┬──────┘ └─────┬──────┘ └─────┬──────┘
+                    │               │               │
+                    │               │               │
+                ┌───▼───┐       ┌───▼───┐       ┌───▼───┐
+                │ Baud  │       │ TX    │       │ RX    │
+                │  Gen  │       │ FSM   │       │ FSM   │
+                └───────┘       └───┬───┘       └───────┘
+                                    │
+                                    └────── tx_out (serial wire!)
+```
+
+**The flow**:
+1. CPU writes to address `0x08` (TX_DATA)
+2. Address decoder sees `0x08` and routes to TX_DATA register
+3. TX_DATA register captures the byte
+4. TX_DATA register asserts `tx_start` signal
+5. TX FSM wakes up and starts transmitting bit-by-bit!
+
+**This is the magic**: CPU just writes to a memory address, but hardware converts it to serial transmission!
+
+---
+
+#### Implementing Memory-Mapped Registers in Verilog
+
+Here's simplified code for YOUR UART register interface:
+
+```verilog
+module uart_register_interface (
+    input clk,
+    input rst_n,
+    
+    // CPU Bus Interface
+    input  [31:0] address,
+    input  [31:0] data_in,
+    output [31:0] data_out,
+    input         data_write_n,  // 0 = write
+    input         data_read_n,   // 0 = read
+    
+    // To UART modules
+    output [3:0]  baud_sel,
+    output        enable,
+    output [7:0]  tx_data,
+    output        tx_start,
+    input  [7:0]  rx_data,
+    input         rx_ready,
+    input         tx_busy
+);
+
+// The actual register storage (flip-flops)
+reg [7:0] ctrl_register;
+reg [7:0] tx_data_reg;
+reg       tx_start_pulse;
+
+// Base address for this UART
+localparam BASE_ADDR = 32'h1000_0000;
+
+// Address offsets
+localparam CTRL_OFFSET   = 4'h0;  // 0x10000000
+localparam STATUS_OFFSET = 4'h4;  // 0x10000004
+localparam TXDATA_OFFSET = 4'h8;  // 0x10000008
+localparam RXDATA_OFFSET = 4'hC;  // 0x1000000C
+
+// ============= WRITE OPERATIONS =============
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        ctrl_register <= 8'h00;
+        tx_data_reg   <= 8'h00;
+        tx_start_pulse <= 1'b0;
+    end
+    else begin
+        tx_start_pulse <= 1'b0;  // Default: no transmit
+        
+        // Is CPU writing to us?
+        if (!data_write_n && address[31:4] == BASE_ADDR[31:4]) begin
+            case (address[3:0])
+                CTRL_OFFSET: begin
+                    // Write to CTRL register
+                    ctrl_register <= data_in[7:0];
+                end
+                
+                TXDATA_OFFSET: begin
+                    // Write to TX_DATA triggers transmission!
+                    tx_data_reg <= data_in[7:0];
+                    tx_start_pulse <= 1'b1;  // Pulse to start TX
+                end
+                
+                // STATUS and RXDATA are read-only, ignore writes
+            endcase
+        end
+    end
+end
+
+// Extract control signals from ctrl_register
+assign baud_sel = ctrl_register[7:4];
+assign enable   = ctrl_register[0];
+assign tx_data  = tx_data_reg;
+assign tx_start = tx_start_pulse;
+
+// ============= READ OPERATIONS =============
+reg [31:0] data_out_reg;
+
+always @(*) begin
+    // Default: return 0
+    data_out_reg = 32'h0000_0000;
+    
+    // Is CPU reading from us?
+    if (!data_read_n && address[31:4] == BASE_ADDR[31:4]) begin
+        case (address[3:0])
+            STATUS_OFFSET: begin
+                // Build status word
+                data_out_reg = {28'h0, tx_busy, rx_ready, 2'b00};
+            end
+            
+            RXDATA_OFFSET: begin
+                // Return received data
+                data_out_reg = {24'h000000, rx_data};
+            end
+            
+            // CTRL and TXDATA are write-only, return 0
+        endcase
+    end
+end
+
+assign data_out = data_out_reg;
+
+endmodule
+```
+
+**Key insights**:
+1. **Address decoder**: `if (address == 0x10000000)` decides which register
+2. **Write logic**: Stores value when `data_write_n = 0`
+3. **Read logic**: Returns status/data when `data_read_n = 0`
+4. **Side effects**: Writing to TX_DATA creates `tx_start` pulse!
+
+---
+
 ### The Control Panel Analogy 🎛️
 
 Think of UART **memory-mapped registers** like the dashboard in your car:
