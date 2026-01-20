@@ -47,6 +47,10 @@ echo "  - Copying peripheral source files..."
 cp peripheral/src/peripheral.v "$WORK_DIR/"
 cp peripheral/src/tt_wrapper.v "$WORK_DIR/"
 
+# Copy UART peripheral modules
+echo "  - Copying UART peripheral modules..."
+cp peripheral/src/uart/*.v "$WORK_DIR/"
+
 # Copy test harness files
 echo "  - Copying test harness files..."
 cp peripheral/src/test_harness/*.sv "$WORK_DIR/"
@@ -82,16 +86,25 @@ read_verilog qspi_ctrl.v
 read_verilog qspi_flash.v
 read_verilog register.v
 read_verilog time.v
+
+# 3. Read UART peripheral modules
+read_verilog uart_baud_generator.v
+read_verilog uart_tx.v
+read_verilog uart_rx.v
+read_verilog uart_register_interface.v
+read_verilog uart_peripheral.v
+
+# 4. Read top-level peripheral and wrapper
 read_verilog peripheral.v
 read_verilog tinyqv.v
 read_verilog tt_wrapper.v
 
-# 3. Check hierarchy and synthesize
+# 5. Check hierarchy and synthesize
 # Replace 'tt_um_tqv_peripheral_harness' with your actual top module name
 hierarchy -top tt_um_tqv_peripheral_harness
 synth -top tt_um_tqv_peripheral_harness
 
-# 4. Generate statistics and cleanup
+# 6. Generate statistics and cleanup
 opt
 clean
 stat
@@ -157,6 +170,11 @@ config['VERILOG_FILES'] = [
     'dir::mem_ctrl.v',
     'dir::qspi_ctrl.v',
     'dir::qspi_flash.v',
+    'dir::uart_baud_generator.v',
+    'dir::uart_tx.v',
+    'dir::uart_rx.v',
+    'dir::uart_register_interface.v',
+    'dir::uart_peripheral.v',
     'dir::peripheral.v',
     'dir::counter.v',
     'dir::time.v',
