@@ -357,13 +357,74 @@ Solution checklist:
 
 ## UART Registers (How to Actually Use Them!)
 
+### ⚠️ Wait... What KIND of "Register"?
+
+The word **"register"** has **3 different meanings** in hardware. Let's clear this up:
+
+#### 1️⃣ Memory-Mapped Registers (What we're talking about HERE!)
+- **What**: Special memory addresses the CPU uses to talk to peripherals
+- **Where**: They live at specific addresses like `0x00`, `0x04`, `0x08`
+- **How**: CPU reads/writes to these addresses to control UART
+- **Think**: Like mailboxes - CPU puts letters in (writes) or checks for mail (reads)
+- **In Verilog**: Declared as `reg [31:0] ctrl_register;` but used as storage
+
+**Example**: 
+```verilog
+// If CPU writes to address 0x00, store in ctrl_register
+if (address == 32'h0000_0000 && !data_write_n)
+    ctrl_register <= data_in;  // This is a memory-mapped register!
+```
+
+#### 2️⃣ Shift Registers (Used INSIDE the UART)
+- **What**: Sequential circuits that shift bits left/right
+- **Where**: Inside TX/RX modules to serialize/deserialize data
+- **How**: Takes parallel byte (8 bits), outputs 1 bit at a time (or vice versa)
+- **Think**: Like a conveyor belt moving bits one position at a time
+- **In Verilog**: `reg [7:0] shift_reg;` with shift operations `<< 1` or `>> 1`
+
+**Example**:
+```verilog
+// TX shift register - outputs bits one-by-one
+always @(posedge clk) begin
+    if (load)
+        shift_reg <= tx_data;      // Load 8 bits
+    else if (shift)
+        shift_reg <= {1'b0, shift_reg[7:1]};  // Shift right, output bit 0
+end
+assign tx_out = shift_reg[0];  // Serial output!
+```
+
+#### 3️⃣ Verilog `reg` Keyword (Just a language thing!)
+- **What**: Verilog syntax for variables assigned in `always` blocks
+- **Where**: Anywhere in your Verilog code
+- **How**: Just means "this holds a value" - might be a flip-flop, might be combinational
+- **Think**: Like declaring `int x;` in C - just a variable type
+- **Confusing**: Name is historical - doesn't always mean physical register/flip-flop!
+
+**Example**:
+```verilog
+reg [7:0] counter;        // Probably becomes flip-flops (sequential)
+reg [3:0] temp_value;     // Might be just wires (combinational)
+reg tx_busy;              // Status bit (probably a flip-flop)
+```
+
+---
+
+### 🎯 For This Section: We Mean **Memory-Mapped Registers** (#1)
+
+These are the "control panel" the CPU uses to operate the UART peripheral.
+
+---
+
 ### The Control Panel Analogy 🎛️
 
-Think of UART registers like the dashboard in your car:
+Think of UART **memory-mapped registers** like the dashboard in your car:
 - **Control Register** = Gear shift, turn signals (what you want to DO)
 - **Status Register** = Dashboard lights, fuel gauge (what's HAPPENING)
 - **Data Register** = The cargo you're carrying
 - **Baud Rate Register** = Speed limiter setting
+
+**Key concept**: CPU doesn't directly control the UART wires. Instead, it writes to special memory addresses (registers), and the UART hardware reads those values to know what to do!
 
 ---
 
@@ -387,7 +448,7 @@ UART_CTRL = 0x0C1;  // Binary: 00001100 0001
 ```
 
 **Think of it like**: Setting your car's cruise control to 115 mph and turning the engine ON.
-
+V
 ---
 
 ### Register #2: STATUS Register (STATUS) - "The Dashboard"
