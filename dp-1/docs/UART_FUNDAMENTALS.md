@@ -283,16 +283,22 @@ Imagine sending a letter 'A' like a train carrying cargo:
 Time →
 ┌─────────┬────┬────┬────┬────┬────┬────┬────┬────┬────┬─────────
 │  IDLE   │    │    │    │    │    │    │    │    │    │  IDLE
-│   (1)   │ 0  │ 1  │ 0  │ 0  │ 0  │ 0  │ 0  │ 1  │ 1  │  (1)
+│   (1)   │ 0  │ 1  │ 0  │ 0  │ 0  │ 0  │ 0  │ 1  │ 0  │  (1)
 └─────────┴────┴────┴────┴────┴────┴────┴────┴────┴────┴─────────
            START  D0   D1   D2   D3   D4   D5   D6   D7  STOP
           🚂     🚃   🚃   🚃   🚃   🚃   🚃   🚃   🚃   🚋
                   ↑                                   ↑
                  LSB                                 MSB
-                (Last car)                      (First car)
+                (Sent first)                   (Sent last)
 ```
 
-Actual bit values on wire: **1 → 0 → 1 → 0 → 0 → 0 → 0 → 0 → 1 → 1 → 1**
+Actual bit values on wire: **1 → 0 → 1 → 0 → 0 → 0 → 0 → 0 → 1 → 0 → 1**
+
+**Breaking it down step-by-step:**
+- 0x41 in binary: 0b**01000001** (reading left-to-right: bit7-bit6-bit5-bit4-bit3-bit2-bit1-bit0)
+- **Bit positions**: D7=**0**, D6=**1**, D5=**0**, D4=**0**, D3=**0**, D2=**0**, D1=**0**, D0=**1**
+- **LSB first** means we transmit D0 first, then D1, D2... up to D7 last
+- **Wire sequence**: START(0) → D0(**1**) → D1(**0**) → D2(**0**) → D3(**0**) → D4(**0**) → D5(**0**) → D6(**1**) → D7(**0**) → STOP(1)
 
 ### Why LSB First?
 
@@ -349,39 +355,157 @@ Solution checklist:
 
 ---
 
-## UART Registers (Typical Implementation)
+## UART Registers (How to Actually Use Them!)
 
-### Control Registers
+### The Control Panel Analogy 🎛️
 
-1. **Baud Rate Register** (BRR)
-   - Sets the clock divider for baud rate
+Think of UART registers like the dashboard in your car:
+- **Control Register** = Gear shift, turn signals (what you want to DO)
+- **Status Register** = Dashboard lights, fuel gauge (what's HAPPENING)
+- **Data Register** = The cargo you're carrying
+- **Baud Rate Register** = Speed limiter setting
 
-2. **Control Register** (CR)
-   - TX enable
-   - RX enable
-   - Parity enable/type
-   - Stop bits configuration
-   - Interrupt enables
+---
 
-3. **Status Register** (SR)
-   - TX ready (buffer empty)
-   - RX ready (data available)
-   - Error flags (framing, parity, overrun)
+### Register #1: CONTROL Register (CTRL) - "The Settings Knob"
 
-4. **Data Register** (DR)
-   - Write: Send byte
-   - Read: Receive byte
+**What it does**: You tell the UART HOW to operate
 
-### Example Register Map
+**Typical bits**:
+```
+Bit 7-4: Baud rate selection (0000=9600, 0001=19200, etc.)
+Bit 3-1: Reserved
+Bit 0:   UART Enable (1=ON, 0=OFF)
+```
+
+**Real example - Starting your UART**:
+```c
+// I want 115200 baud rate, UART enabled
+UART_CTRL = 0x0C1;  // Binary: 00001100 0001
+                    // Bits 7-4 = 0xC (115200 baud)
+                    // Bit 0 = 1 (Enable)
+```
+
+**Think of it like**: Setting your car's cruise control to 115 mph and turning the engine ON.
+
+---
+
+### Register #2: STATUS Register (STATUS) - "The Dashboard"
+
+**What it does**: UART tells YOU what's happening (READ-ONLY!)
+
+**Typical bits**:
+```
+Bit 7-4: Reserved
+Bit 3:   TX_BUSY (1=transmitter busy, 0=ready for new data)
+Bit 2:   RX_READY (1=data received and ready to read, 0=nothing yet)
+Bit 1:   RX_OVERRUN (1=missed data because CPU was too slow!)
+Bit 0:   RX_ERROR (1=framing error, 0=no error)
+```
+
+**Real example - Checking before sending**:
+```c
+// Before sending data, check if TX is ready
+while (UART_STATUS & 0x08) {  // Bit 3: TX_BUSY
+    // Wait... transmitter still busy
+}
+// Now TX_BUSY=0, safe to send!
+UART_TX_DATA = 'A';  // Send the letter 'A'
+```
+
+**Think of it like**: Checking your car's fuel gauge before starting a trip. You don't CONTROL the fuel level by looking at the gauge, you just READ it!
+
+---
+
+### Register #3: TX_DATA Register - "The Outbox"
+
+**What it does**: Write a byte here to SEND it
+
+**Real example - Sending "Hi"**:
+```c
+// Step 1: Wait for TX to be ready
+while (UART_STATUS & 0x08);  // Wait while TX_BUSY=1
+
+// Step 2: Write 'H'
+UART_TX_DATA = 'H';  // Writing triggers transmission!
+
+// Step 3: Wait again (TX becomes busy)
+while (UART_STATUS & 0x08);  // Wait for 'H' to finish
+
+// Step 4: Write 'i'
+UART_TX_DATA = 'i';
+```
+
+**Think of it like**: Dropping letters in a mailbox. Once you drop it in (write to register), the mail carrier (UART hardware) picks it up and delivers it.
+
+---
+
+### Register #4: RX_DATA Register - "The Inbox"
+
+**What it does**: Read a byte from here after receiving it
+
+**Real example - Receiving data**:
+```c
+// Step 1: Check if data has arrived
+if (UART_STATUS & 0x04) {  // Bit 2: RX_READY=1?
+    
+    // Step 2: Read the received byte
+    char received = UART_RX_DATA;
+    
+    // Reading automatically clears RX_READY flag!
+    // UART is now ready to receive next byte
+    
+    printf("Got: %c\n", received);
+}
+```
+
+**Think of it like**: Checking your mailbox. When the flag is up (RX_READY=1), you have mail. Reading it (loading RX_DATA) automatically lowers the flag.
+
+---
+
+### Complete Example: Echo Program (Read & Send Back)
+
+```c
+void uart_echo() {
+    // Setup: Enable UART at 115200 baud
+    UART_CTRL = 0xC1;  // 115200 baud, enabled
+    
+    while (1) {
+        // 1. Wait for incoming data
+        if (UART_STATUS & 0x04) {  // RX_READY?
+            
+            // 2. Read what was received
+            char data = UART_RX_DATA;
+            
+            // 3. Wait until TX is ready
+            while (UART_STATUS & 0x08);  // TX_BUSY?
+            
+            // 4. Echo it back
+            UART_TX_DATA = data;
+        }
+    }
+}
+```
+
+**What this does**: Whatever you type gets sent right back to you (like shouting into a canyon).
+
+---
+
+### Your TinyQV Register Map
 
 ```
-Offset  | Register | Description
---------|----------|----------------------------------
-0x00    | DR       | Data Register (TX/RX)
-0x04    | SR       | Status Register
-0x08    | CR       | Control Register
-0x0C    | BRR      | Baud Rate Register
+Address | Register  | Read/Write | What it does
+--------|-----------|------------|----------------------------------------
+0x00    | CTRL      | Write Only | Configure: baud rate, enable
+0x04    | STATUS    | Read Only  | Check: TX busy? RX ready? Errors?
+0x08    | TX_DATA   | Write Only | Write byte here to transmit
+0x0C    | RX_DATA   | Read Only  | Read received byte from here
 ```
+
+**Remember**:
+- **Write-only registers**: You SET them (like turning a knob)
+- **Read-only registers**: You CHECK them (like reading a gauge)
+- **Never** try to write to STATUS or read from CTRL!
 
 ---
 
