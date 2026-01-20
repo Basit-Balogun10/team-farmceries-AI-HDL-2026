@@ -102,6 +102,10 @@ module uart_register_interface (
                         if (data_in[0]) int_status_reg[0] <= 1'b0;
                         if (data_in[1]) int_status_reg[1] <= 1'b0;
                     end
+                    
+                    default: begin
+                        // Ignore writes to undefined addresses
+                    end
                 endcase
             end
         end

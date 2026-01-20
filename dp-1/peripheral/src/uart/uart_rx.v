@@ -59,7 +59,7 @@ module uart_rx (
         if (!rst_n) begin
             state       <= IDLE;
             sample_cnt  <= 4'd0;
-            bit_cnt     <= 3'd0;
+            bit_cnt     <= 4'd0;
             rx_shift    <= 8'd0;
             rx_data     <= 8'd0;
             rx_ready    <= 1'b0;
