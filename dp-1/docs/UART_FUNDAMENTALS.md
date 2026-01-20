@@ -656,6 +656,246 @@ endmodule
 
 ---
 
+### 🤔 Wait... When Does CPU Decide to Read or Write?
+
+**Short answer**: The SOFTWARE (your program) tells the CPU what to do!
+
+#### The CPU Instruction Flow
+
+The CPU executes **instructions** from your program. When it sees certain instructions, it generates read/write signals:
+
+**Example C Program**:
+```c
+void send_hello() {
+    char *uart_tx = (char *)0x10000008;  // TX_DATA address
+    char *uart_status = (char *)0x10000004;  // STATUS address
+    
+    // This instruction causes a READ
+    while (*uart_status & 0x08);  // Read STATUS, check TX_BUSY bit
+    
+    // This instruction causes a WRITE
+    *uart_tx = 'H';  // Write 'H' to TX_DATA
+}
+```
+
+**What the CPU does (simplified)**:
+
+**1. Read Operation** (`while (*uart_status & 0x08)`):
+```
+CPU sees: "Load byte from address 0x10000004"
+
+CPU Actions:
+├─ Put 0x10000004 on address bus
+├─ Assert data_read_n = 0  ← CPU says "I'm reading!"
+├─ Wait for device to respond
+├─ Capture data from data_out bus
+└─ Use the value (check bit 3)
+```
+
+**2. Write Operation** (`*uart_tx = 'H'`):
+```
+CPU sees: "Store byte 'H' to address 0x10000008"
+
+CPU Actions:
+├─ Put 0x10000008 on address bus
+├─ Put 0x48 ('H') on data_in bus
+├─ Assert data_write_n = 0  ← CPU says "I'm writing!"
+├─ Wait one clock cycle
+└─ De-assert data_write_n = 1 (done)
+```
+
+**Assembly code that generates these signals**:
+```assembly
+# Read STATUS register
+LW   t0, 0x10000004(zero)   # Load Word → data_read_n = 0
+ANDI t1, t0, 0x08           # Check bit 3
+
+# Write to TX_DATA register  
+LI   t2, 0x48               # Load immediate 'H'
+SW   t2, 0x10000008(zero)   # Store Word → data_write_n = 0
+```
+
+**The key**: `data_write_n` and `data_read_n` are **outputs from the CPU**, controlled by what instructions it's executing!
+
+---
+
+### 🔌 Where Are "Device A" and "Device B"?
+
+**Great question!** Let me show you the COMPLETE physical system:
+
+#### The Full Picture: Two Devices Talking
+
+```
+┌─────────────────────────────────────────┐         ┌─────────────────────────┐
+│          DEVICE A                       │         │      DEVICE B           │
+│         (Your TinyQV System)            │         │   (External Device)     │
+│                                         │         │                         │
+│  ┌──────────────┐   ┌───────────────┐  │         │  ┌───────────────┐      │
+│  │              │   │               │  │         │  │               │      │
+│  │  TinyQV CPU  │   │  UART         │  │         │  │   Their       │      │
+│  │   (RISC-V)   │   │  Peripheral   │  │         │  │   UART        │      │
+│  │              │   │               │  │         │  │               │      │
+│  │  - Runs code │   │  - TX Module──┼──┼────TX───┼─►│ RX ───────────┼──┐   │
+│  │  - Reads/    │   │  - RX Module◄─┼──┼────RX───┼──│ TX            │  │   │
+│  │    Writes    │   │  - Registers  │  │         │  │               │  │   │
+│  │    registers │◄──┤  - Baud Gen   │  │         │  │               │  │   │
+│  │              │   │               │  │         │  │               │  │   │
+│  └──────────────┘   └───────────────┘  │         │  └───────────────┘  │   │
+│         ▲                    ▲          │         │           │          │   │
+│         │                    │          │         │           ▼          │   │
+│         │            (Internal bus)     │         │    ┌──────────────┐  │   │
+│         │                    │          │         │    │ Their CPU or │  │   │
+│         └────────────────────┘          │         │    │ Microcontrol │  │   │
+│                                         │         │    └──────────────┘  │   │
+└─────────────────────────────────────────┘         └─────────────────────────┘
+              ▲                                                    ▲
+              │                                                    │
+         Your FPGA board                                   External hardware
+      (Ice40 or similar)                              (Arduino, PC, GPS, etc.)
+              
+         GND ─────────────── GND ─────────────────────── GND
+         (Common ground required!)
+```
+
+**Breaking it down**:
+
+1. **Device A = Your Entire TinyQV System**
+   - TinyQV CPU (runs your program)
+   - UART peripheral (your Verilog code)
+   - Both live on the same FPGA chip
+   - Connected internally via register bus
+
+2. **Device B = External Device** (could be many things!)
+   - Another microcontroller (Arduino, ESP32, etc.)
+   - A PC running terminal software (PuTTY, screen, etc.)
+   - A GPS module
+   - A Bluetooth chip
+   - ANY device with a UART interface
+
+#### What Your CPU Does
+
+Your CPU is like a person operating a telegraph machine:
+
+```
+CPU's job:
+┌─────────────────────────────────────────┐
+│ 1. Decides "I want to send 'A'"         │
+│ 2. Writes 'A' to UART TX_DATA register  │ ← Software decision
+│ 3. UART hardware takes over             │ ← Your Verilog!
+│ 4. UART sends bits on TX wire           │
+│ 5. External device receives on RX wire  │
+└─────────────────────────────────────────┘
+```
+
+**The CPU is NOT the sender/receiver!** The CPU is the **BRAIN** that controls the UART peripheral, which is the actual sender/receiver.
+
+#### Real Hardware Example
+
+Let's say you're building a weather station:
+
+```
+┌────────────────────────────────┐          ┌──────────────────────┐
+│  Ice40 FPGA Board              │          │   GPS Module         │
+│  (Your TinyQV + UART)          │          │   (NEO-6M)           │
+│                                │          │                      │
+│  Pin 15 (TX) ──────────────────┼─────────►│ RX pin               │
+│  Pin 16 (RX) ◄─────────────────┼──────────│ TX pin               │
+│  GND ──────────────────────────┼──────────│ GND                  │
+│                                │          │                      │
+│  CPU runs:                     │          │  Sends GPS data:     │
+│  while(1) {                    │          │  "$GPGGA,123456,..." │
+│    if (rx_ready)               │          │  at 9600 baud        │
+│      data = read_uart();       │          │                      │
+│  }                             │          │                      │
+└────────────────────────────────┘          └──────────────────────┘
+```
+
+#### Physical Wires
+
+The TX and RX signals are **actual physical pins on your FPGA**:
+
+```verilog
+module top (
+    // ... other signals ...
+    output wire uart_tx,  // → Goes to external pin (e.g., GPIO 15)
+    input  wire uart_rx   // ← Comes from external pin (e.g., GPIO 16)
+);
+
+// Your UART module
+uart_peripheral my_uart (
+    .tx_out(uart_tx),  // This becomes a voltage on the physical pin!
+    .rx_in(uart_rx),   // This reads voltage from the physical pin!
+    // ...
+);
+```
+
+**The signal journey**:
+```
+Inside FPGA:                   Outside FPGA:
+tx_out (wire) → Pin driver → Physical pin voltage (3.3V or 0V) → Travels on wire → External device RX pin
+```
+
+---
+
+### 🔁 What About Loopback Testing?
+
+Loopback testing is when you **connect Device A to itself** for testing purposes:
+
+#### Loopback Configuration
+
+**Instead of this** (normal):
+```
+TinyQV TX ──────► External Device RX
+TinyQV RX ◄────── External Device TX
+```
+
+**You do this** (loopback):
+```
+TinyQV TX ──┐
+            ├──► Short wire
+TinyQV RX ◄─┘
+```
+
+**In testbench** (simulation):
+```verilog
+// Connect TX directly to RX
+assign uart_rx = uart_tx;  // Whatever I send, I immediately receive
+```
+
+**Why loopback?**
+- ✅ Test your TX module (does it transmit correctly?)
+- ✅ Test your RX module (does it receive correctly?)
+- ✅ Don't need external hardware
+- ✅ Easy to debug (you control both ends)
+
+**Example loopback test**:
+```c
+// Send 'A', should receive 'A' back
+uart_send('A');
+char received = uart_receive();
+if (received == 'A') {
+    printf("Success! Loopback works!\n");
+}
+```
+
+---
+
+### Summary: Devices A & B
+
+| Component | What It Is | Role |
+|-----------|------------|------|
+| **TinyQV CPU** | Your RISC-V processor | Runs software, controls UART via registers |
+| **UART Peripheral** | Your Verilog module | Converts bytes to serial (TX), serial to bytes (RX) |
+| **Device A** | CPU + UART together | The complete sender/receiver system |
+| **Device B** | External hardware | The thing you're talking to (GPS, PC, Arduino, etc.) |
+| **TX Wire** | Physical connection | Carries serial data from A to B |
+| **RX Wire** | Physical connection | Carries serial data from B to A |
+| **Loopback** | Test configuration | A talks to itself (TX→RX on same device) |
+
+**The key insight**: Your UART peripheral is the **interface** between the digital world inside the CPU and the physical serial communication world outside!
+
+---
+
 ### The Control Panel Analogy 🎛️
 
 Think of UART **memory-mapped registers** like the dashboard in your car:
