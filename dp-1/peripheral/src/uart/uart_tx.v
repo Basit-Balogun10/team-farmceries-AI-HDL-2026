@@ -39,11 +39,14 @@ module uart_tx (
     // Bit counter (0-7 for 8 data bits)
     reg [2:0] bit_cnt;
     
+    // Sample counter for 16x oversampling (0-15)
+    reg [3:0] sample_cnt;
+    
     // State register
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             state <= IDLE;
-        end else begin
+        end else if (tx_start || baud_tick) begin
             state <= next_state;
         end
     end
@@ -59,17 +62,17 @@ module uart_tx (
             end
             
             START: begin
-                if (baud_tick)
+                if (baud_tick && sample_cnt == 4'd15)
                     next_state = DATA;
             end
             
             DATA: begin
-                if (baud_tick && bit_cnt == 3'd7)
+                if (baud_tick && sample_cnt == 4'd15 && bit_cnt == 3'd7)
                     next_state = STOP;
             end
             
             STOP: begin
-                if (baud_tick)
+                if (baud_tick && sample_cnt == 4'd15)
                     next_state = IDLE;
             end
             
@@ -80,36 +83,55 @@ module uart_tx (
     // Shift register and bit counter
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            shift_reg <= 8'h00;
-            bit_cnt   <= 3'd0;
+            shift_reg  <= 8'h00;
+            bit_cnt    <= 3'd0;
+            sample_cnt <= 4'd0;
         end else begin
             case (state)
                 IDLE: begin
                     if (tx_start) begin
-                        shift_reg <= tx_data;  // Load data
-                        bit_cnt   <= 3'd0;
+                        shift_reg  <= tx_data;  // Load data
+                        bit_cnt    <= 3'd0;
+                        sample_cnt <= 4'd0;
                     end
                 end
                 
                 START: begin
-                    // Keep data loaded, reset bit counter
-                    bit_cnt <= 3'd0;
+                    if (baud_tick) begin
+                        if (sample_cnt == 4'd15) begin
+                            sample_cnt <= 4'd0;
+                        end else begin
+                            sample_cnt <= sample_cnt + 4'd1;
+                        end
+                    end
                 end
                 
                 DATA: begin
                     if (baud_tick) begin
-                        shift_reg <= {1'b0, shift_reg[7:1]};  // Shift right
-                        bit_cnt   <= bit_cnt + 1;
+                        if (sample_cnt == 4'd15) begin
+                            shift_reg  <= {1'b0, shift_reg[7:1]};  // Shift right
+                            bit_cnt    <= bit_cnt + 1;
+                            sample_cnt <= 4'd0;
+                        end else begin
+                            sample_cnt <= sample_cnt + 4'd1;
+                        end
                     end
                 end
                 
                 STOP: begin
-                    // Nothing to do
+                    if (baud_tick) begin
+                        if (sample_cnt == 4'd15) begin
+                            sample_cnt <= 4'd0;
+                        end else begin
+                            sample_cnt <= sample_cnt + 4'd1;
+                        end
+                    end
                 end
                 
                 default: begin
-                    shift_reg <= 8'h00;
-                    bit_cnt   <= 3'd0;
+                    shift_reg  <= 8'h00;
+                    bit_cnt    <= 3'd0;
+                    sample_cnt <= 4'd0;
                 end
             endcase
         end

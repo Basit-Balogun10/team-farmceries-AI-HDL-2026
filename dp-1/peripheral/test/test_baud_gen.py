@@ -16,12 +16,12 @@ from cocotb.regression import TestFactory
 # Clock frequency: 70 MHz
 CLK_PERIOD_NS = 14  # ~14.3ns for 70MHz, using 14 for simplicity
 
-# Expected divisor values for each baud rate
+# Expected divisor values for each baud rate (16x oversampling)
 DIVISORS = {
-    0x0: 7291,    # 9600 baud
-    0x1: 3645,    # 19200 baud
-    0x2: 1823,    # 38400 baud
-    0xC: 607,     # 115200 baud
+    0x0: 456,     # 9600 baud * 16
+    0x1: 228,     # 19200 baud * 16
+    0x2: 114,     # 38400 baud * 16
+    0xC: 38,      # 115200 baud * 16
 }
 
 

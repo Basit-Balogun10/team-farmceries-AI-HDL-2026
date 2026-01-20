@@ -41,7 +41,7 @@ def bits_to_byte(bits):
 @cocotb.test()
 async def test_idle_state(dut):
     """Test idle state behavior"""
-    clock = Clock(dut.clk, CLK_PERIOD_NS, unit="ns")
+    clock = Clock(dut.clk, CLK_PERIOD_NS, units="ns")
     cocotb.start_soon(clock.start())
     
     # Reset
@@ -66,7 +66,7 @@ async def test_idle_state(dut):
 @cocotb.test()
 async def test_single_byte_transmission(dut):
     """Test transmission of single byte 0x55 (0b01010101)"""
-    clock = Clock(dut.clk, CLK_PERIOD_NS, unit="ns")
+    clock = Clock(dut.clk, CLK_PERIOD_NS, units="ns")
     cocotb.start_soon(clock.start())
     
     # Reset
@@ -96,11 +96,12 @@ async def test_single_byte_transmission(dut):
         # Sample before baud tick
         captured_bits.append(int(dut.tx_out.value))
         
-        # Generate baud tick
-        dut.baud_tick.value = 1
-        await RisingEdge(dut.clk)
-        dut.baud_tick.value = 0
-        await RisingEdge(dut.clk)
+        # Generate 16 baud ticks per bit (16x oversampling)
+        for _ in range(16):
+            dut.baud_tick.value = 1
+            await RisingEdge(dut.clk)
+            dut.baud_tick.value = 0
+            await RisingEdge(dut.clk)
     
     # Extract frame
     start, data, stop = extract_frame(captured_bits)
@@ -124,7 +125,7 @@ async def test_single_byte_transmission(dut):
 @cocotb.test()
 async def test_lsb_first(dut):
     """Test that data is transmitted LSB first"""
-    clock = Clock(dut.clk, CLK_PERIOD_NS, unit="ns")
+    clock = Clock(dut.clk, CLK_PERIOD_NS, units="ns")
     cocotb.start_soon(clock.start())
     
     # Reset
@@ -146,10 +147,12 @@ async def test_lsb_first(dut):
     captured_bits = []
     for _ in range(10):
         captured_bits.append(int(dut.tx_out.value))
-        dut.baud_tick.value = 1
-        await RisingEdge(dut.clk)
-        dut.baud_tick.value = 0
-        await RisingEdge(dut.clk)
+        # Generate 16 baud ticks per bit (16x oversampling)
+        for _ in range(16):
+            dut.baud_tick.value = 1
+            await RisingEdge(dut.clk)
+            dut.baud_tick.value = 0
+            await RisingEdge(dut.clk)
     
     # For 0x01, LSB first means: start(0), 1,0,0,0,0,0,0,0, stop(1)
     assert captured_bits[0] == 0, "Start bit"
@@ -163,7 +166,7 @@ async def test_lsb_first(dut):
 @cocotb.test()
 async def test_busy_flag(dut):
     """Test tx_busy flag timing"""
-    clock = Clock(dut.clk, CLK_PERIOD_NS, unit="ns")
+    clock = Clock(dut.clk, CLK_PERIOD_NS, units="ns")
     cocotb.start_soon(clock.start())
     
     # Reset
@@ -190,10 +193,12 @@ async def test_busy_flag(dut):
     # Transmit complete frame
     for _ in range(10):
         assert dut.tx_busy.value == 1, "Should stay busy during transmission"
-        dut.baud_tick.value = 1
-        await RisingEdge(dut.clk)
-        dut.baud_tick.value = 0
-        await RisingEdge(dut.clk)
+        # Generate 16 baud ticks per bit (16x oversampling)
+        for _ in range(16):
+            dut.baud_tick.value = 1
+            await RisingEdge(dut.clk)
+            dut.baud_tick.value = 0
+            await RisingEdge(dut.clk)
     
     # Should be idle after stop bit
     assert dut.tx_busy.value == 0, "Should be idle after complete transmission"
@@ -204,7 +209,7 @@ async def test_busy_flag(dut):
 @cocotb.test()
 async def test_multiple_transmissions(dut):
     """Test back-to-back transmissions"""
-    clock = Clock(dut.clk, CLK_PERIOD_NS, unit="ns")
+    clock = Clock(dut.clk, CLK_PERIOD_NS, units="ns")
     cocotb.start_soon(clock.start())
     
     # Reset
@@ -229,10 +234,12 @@ async def test_multiple_transmissions(dut):
         captured_bits = []
         for _ in range(10):
             captured_bits.append(int(dut.tx_out.value))
-            dut.baud_tick.value = 1
-            await RisingEdge(dut.clk)
-            dut.baud_tick.value = 0
-            await RisingEdge(dut.clk)
+            # Generate 16 baud ticks per bit (16x oversampling)
+            for _ in range(16):
+                dut.baud_tick.value = 1
+                await RisingEdge(dut.clk)
+                dut.baud_tick.value = 0
+                await RisingEdge(dut.clk)
         
         # Verify
         start, data, stop = extract_frame(captured_bits)
@@ -251,7 +258,7 @@ async def test_multiple_transmissions(dut):
 @cocotb.test()
 async def test_ascii_A(dut):
     """Test transmission of ASCII 'A' (0x41)"""
-    clock = Clock(dut.clk, CLK_PERIOD_NS, unit="ns")
+    clock = Clock(dut.clk, CLK_PERIOD_NS, units="ns")
     cocotb.start_soon(clock.start())
     
     # Reset
@@ -274,10 +281,12 @@ async def test_ascii_A(dut):
     captured_bits = []
     for _ in range(10):
         captured_bits.append(int(dut.tx_out.value))
-        dut.baud_tick.value = 1
-        await RisingEdge(dut.clk)
-        dut.baud_tick.value = 0
-        await RisingEdge(dut.clk)
+        # Generate 16 baud ticks per bit (16x oversampling)
+        for _ in range(16):
+            dut.baud_tick.value = 1
+            await RisingEdge(dut.clk)
+            dut.baud_tick.value = 0
+            await RisingEdge(dut.clk)
     
     # Expected: start(0), 1,0,0,0,0,0,1,0, stop(1)
     expected = [0, 1, 0, 0, 0, 0, 0, 1, 0, 1]

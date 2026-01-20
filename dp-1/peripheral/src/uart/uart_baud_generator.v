@@ -9,14 +9,16 @@
  * Clock: 70 MHz (TinyQV system clock)
  * Supported baud rates: 9600, 19200, 38400, 115200
  * 
+ * OUTPUT: 16x oversampling clock (16 ticks per bit period)
+ * 
  * How it works:
  * - Counter counts from 0 to divisor-1
  * - When counter reaches divisor-1, output 1-cycle pulse and reset
- * - Divisor = CLK_FREQ / BAUD_RATE
+ * - Divisor = CLK_FREQ / (BAUD_RATE * 16)
  * 
  * Example for 9600 baud:
- *   divisor = 70,000,000 / 9600 = 7291
- *   Tick pulse every 7291 clock cycles
+ *   divisor = 70,000,000 / (9600 * 16) = 455.73 ≈ 456
+ *   Tick pulse every 456 clock cycles = 153.6 kHz (16x 9600 Hz)
  */
 module uart_baud_generator (
     input  wire       clk,          // System clock (70 MHz)
@@ -26,16 +28,16 @@ module uart_baud_generator (
     output wire       baud_tick     // 1-cycle pulse at baud rate
 );
 
-    // Baud rate lookup table
+    // Baud rate lookup table (16x oversampling)
     // baud_sel encoding:
     // 4'h0 = 9600 baud
     // 4'h1 = 19200 baud
     // 4'h2 = 38400 baud  
     // 4'hC = 115200 baud (matches CTRL register encoding)
-    localparam [15:0] DIVISOR_9600   = 16'd7291;  // 70MHz / 9600
-    localparam [15:0] DIVISOR_19200  = 16'd3645;  // 70MHz / 19200
-    localparam [15:0] DIVISOR_38400  = 16'd1823;  // 70MHz / 38400
-    localparam [15:0] DIVISOR_115200 = 16'd607;   // 70MHz / 115200
+    localparam [15:0] DIVISOR_9600   = 16'd456;   // 70MHz / (9600 * 16) ≈ 455.73
+    localparam [15:0] DIVISOR_19200  = 16'd228;   // 70MHz / (19200 * 16) ≈ 227.86
+    localparam [15:0] DIVISOR_38400  = 16'd114;   // 70MHz / (38400 * 16) ≈ 113.93
+    localparam [15:0] DIVISOR_115200 = 16'd38;    // 70MHz / (115200 * 16) ≈ 37.98
 
     // Current divisor value (from lookup table)
     reg [15:0] divisor;
