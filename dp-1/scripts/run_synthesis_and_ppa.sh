@@ -110,6 +110,7 @@ echo -e "${GREEN}  ✓ Created $WORK_DIR and $OUTPUT_DIR${NC}"
 echo -e "${YELLOW}[2/8] Copying source files to flat directory...${NC}"
 cp peripheral/src/peripheral.v "$WORK_DIR/"
 cp peripheral/src/tt_wrapper.v "$WORK_DIR/"
+cp peripheral/src/uart/*.v "$WORK_DIR/"
 cp peripheral/src/test_harness/*.sv "$WORK_DIR/"
 cp cpu/src/*.v "$WORK_DIR/"
 echo -e "${GREEN}  ✓ All files copied${NC}"
@@ -138,6 +139,15 @@ read_verilog qspi_ctrl.v
 read_verilog qspi_flash.v
 read_verilog register.v
 read_verilog time.v
+
+# Read UART peripheral modules
+read_verilog uart_baud_generator.v
+read_verilog uart_tx.v
+read_verilog uart_rx.v
+read_verilog uart_register_interface.v
+read_verilog uart_peripheral.v
+
+# Read top-level files
 read_verilog peripheral.v
 read_verilog tinyqv.v
 read_verilog tt_wrapper.v
@@ -198,6 +208,11 @@ config['VERILOG_FILES'] = [
     'dir::mem_ctrl.v',
     'dir::qspi_ctrl.v',
     'dir::qspi_flash.v',
+    'dir::uart_baud_generator.v',
+    'dir::uart_tx.v',
+    'dir::uart_rx.v',
+    'dir::uart_register_interface.v',
+    'dir::uart_peripheral.v',
     'dir::peripheral.v',
     'dir::counter.v',
     'dir::time.v',

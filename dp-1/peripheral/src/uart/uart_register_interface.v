@@ -68,19 +68,38 @@ module uart_register_interface (
     // Assign tx_data output
     assign tx_data = tx_data_reg;
     
-    // Write logic
+    // Write logic + interrupt management (combined to avoid multiple drivers)
     wire write_en = (data_write_n != 2'b11);
+    reg tx_busy_prev;  // Track tx_busy edge for interrupt generation
     
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            ctrl_reg      <= 8'h00;  // Default: 9600 baud (sel=0), disabled
-            tx_data_reg   <= 8'h00;
-            tx_start      <= 1'b0;
-            int_en_reg    <= 2'b00;
+            ctrl_reg       <= 8'h00;  // Default: 9600 baud (sel=0), disabled
+            tx_data_reg    <= 8'h00;
+            tx_start       <= 1'b0;
+            int_en_reg     <= 2'b00;
+            rx_data_reg    <= 8'h00;
+            int_status_reg <= 2'b00;
+            tx_busy_prev   <= 1'b0;
         end else begin
             // Default: clear tx_start pulse after 1 cycle
             tx_start <= 1'b0;
             
+            // Track tx_busy for edge detection
+            tx_busy_prev <= tx_busy;
+            
+            // Latch RX data when ready pulse occurs
+            if (rx_ready) begin
+                rx_data_reg      <= rx_data;
+                int_status_reg[1] <= 1'b1;  // Set RX interrupt pending
+            end
+            
+            // Set TX interrupt when transmission completes (tx_busy falling edge)
+            if (tx_busy_prev && !tx_busy) begin
+                int_status_reg[0] <= 1'b1;  // Set TX done interrupt
+            end
+            
+            // Handle CPU writes
             if (write_en) begin
                 case (address)
                     ADDR_CTRL: begin
@@ -98,7 +117,7 @@ module uart_register_interface (
                     end
                     
                     ADDR_INT_CLR: begin
-                        // Write 1 to clear interrupt
+                        // Write 1 to clear interrupt (has priority over setting)
                         if (data_in[0]) int_status_reg[0] <= 1'b0;
                         if (data_in[1]) int_status_reg[1] <= 1'b0;
                     end
@@ -107,27 +126,6 @@ module uart_register_interface (
                         // Ignore writes to undefined addresses
                     end
                 endcase
-            end
-        end
-    end
-    
-    // RX data latching and interrupt generation
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            rx_data_reg      <= 8'h00;
-            int_status_reg   <= 2'b00;
-        end else begin
-            // Latch RX data when ready pulse occurs
-            if (rx_ready) begin
-                rx_data_reg      <= rx_data;
-                int_status_reg[1] <= 1'b1;  // Set RX interrupt pending
-            end
-            
-            // Set TX interrupt when transmission completes
-            // (tx_busy falling edge)
-            if (!tx_busy && int_status_reg[0] == 1'b0) begin
-                // Check if we just completed a transmission
-                // This is a simplified approach - could track tx_busy edge
             end
         end
     end
