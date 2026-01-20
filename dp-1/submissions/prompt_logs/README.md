@@ -81,24 +81,53 @@ This directory contains the complete conversation history with GitHub Copilot (C
 
 ## How We Used AI
 
-### Effective Prompts
-✅ "Explain 16x oversampling in UART - why is it used and how does it improve noise immunity?"  
-✅ "Design a baud rate generator for 70MHz clock, supporting 9600/19200/38400/115200"  
-✅ "Review this Verilog for synthesis issues and Verilator linting warnings"  
-✅ "Why would I get a multiple conflicting drivers error on int_status_reg during synthesis?"  
-✅ "How should the UART RX FSM transition from IDLE to START_BIT state?"
+### Setup & Context Building Phase (Jan 17-18)
+Prepared comprehensive context for AI before starting design work:
+- Gathered competition documentation (webinars, design phase specs)
+- Converted PDFs to markdown since AI struggled parsing PDFs
+- Stored webinar transcripts and technical docs in `/docs/md/` for AI reference
+- Had AI generate synthesis automation scripts (`run_synthesis.sh`, `run_synthesis_and_ppa.sh`)
+- Set up repository structure and Docker workflow with AI assistance
+- Created competition documentation templates (DESIGN_REPORT, PPA_ANALYSIS, README)
 
-### Less Effective Prompts
-❌ "Make a UART" (too vague)  
-❌ "Fix my code" (without context)  
-❌ "What's wrong?" (need specifics)
+### Learning Phase (Jan 19)
+Used AI to understand UART fundamentals before writing any code:
+- Had AI generate comprehensive UART documentation with timing diagrams
+- Created block diagrams using Mermaid (AI suggested hand-drawn style for readability)
+- Asked AI to explain UART protocol, oversampling, and design tradeoffs
+- Used AI to clarify confusing concepts (register terminology, memory-mapped I/O)
+- Iterated on diagram colors and styling for better visibility
+- Built complete mental model through AI explanations before implementation
 
-### Best Practices
-1. **Be specific**: Include constraints, requirements, context
-2. **Iterate**: Refine based on AI responses
-3. **Verify**: Test AI-generated code thoroughly
-4. **Learn**: Understand *why*, not just *what*
-5. **Document**: Save conversations for future reference
+### Implementation Phase (Jan 20)
+Used AI as a code generation tool with human oversight:
+- Described requirements for each module (baud generator, TX, RX, register interface)
+- AI generated initial Verilog implementations
+- Created Cocotb test files to verify AI-generated code
+- Iterated when tests revealed issues (RX timing, TX FSM bugs)
+
+### Debug & Fix Phase (Jan 20)
+When things didn't work, used AI to troubleshoot:
+- Shared test failures and error messages
+- AI suggested fixes for timing issues, FSM state transitions, register conflicts
+- Applied fixes, re-ran tests, repeated until 37/37 tests passing
+- Critical: verified every AI suggestion through testing
+
+### Synthesis & PPA Phase (Jan 20)
+Worked with AI to resolve synthesis issues:
+- Shared Verilator warnings and synthesis errors
+- AI identified the multiple driver bug on `int_status_reg`
+- AI suggested merging two always blocks to fix the conflict
+- Used AI to understand PPA metrics and verify requirements met
+- Verified final results: 0.01795mm², 0ns WNS, 0.0014µW
+
+### Documentation Phase (Jan 20-21)
+Used AI to structure and write technical reports:
+- AI helped organize DESIGN_REPORT and PPA_ANALYSIS sections
+- Provided actual metrics, AI formatted them professionally
+- AI generated tables, formatted markdown, structured content
+- Human reviewed for accuracy and completeness
+- AI created prompt logs README summarizing the entire process
 
 ## Conclusion
 
