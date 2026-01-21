@@ -1,8 +1,8 @@
 # Team Farmceries - AI Hardware Design League 2026
 
-Building real silicon using AI assistants. This repository documents our journey designing a UART communication peripheral for the [AI-HDL 2026](https://efabless.com/ai-hdl) competition.
+Building real silicon using AI assistants. This repository documents our journey through the [AI-HDL 2026](https://efabless.com/ai-hdl) competition design phases.
 
-## What We Built
+## Design Phase 1: UART Peripheral
 
 A complete UART (serial communication) peripheral that connects to a tiny RISC-V processor. Think of it as the chip's "talking module" - it lets the processor send and receive data one bit at a time over a wire.
 
@@ -72,9 +72,8 @@ dp-1/
 
 ## What's Next
 
-This is Design Phase 1 of the AI-HDL competition. Our UART peripheral will be integrated into a larger system design in future phases.
+Future design phases will build upon this foundation as the competition progresses.
 
 ---
 
-**Team Farmceries** | AI-HDL 2026 Competition  
-*Exploring the future of hardware design with AI assistance*
+**Team Farmceries** | AI-HDL 2026 Competition
