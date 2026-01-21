@@ -1337,6 +1337,1078 @@ Configuration on BOTH devices:
 
 ---
 
-**You're now ready to implement a UART peripheral!** 🎉
+---
 
-The beauty of UART is its simplicity - it's been around since the 1960s and still widely used today because it just works. Good luck with your implementation!
+## Advanced Features: FIFOs and Flow Control
+
+The basic UART we've discussed works, but has limitations in real-world applications. Let's explore two critical enhancements that make UART production-ready.
+
+---
+
+## FIFO Buffers: Preventing Data Loss
+
+### The Problem: Why We Need FIFOs
+
+**The Restaurant Kitchen Analogy:**
+
+Imagine a restaurant without a prep area:
+- **Without FIFO**: Chef must cook each order immediately when waiter arrives
+  - If chef is busy → order gets lost!
+  - Waiter must wait → inefficient!
+  - Kitchen backs up during rush hour
+
+- **With FIFO**: Orders go to a ticket queue (prep station)
+  - Chef cooks in order (First In, First Out)
+  - Waiter can leave immediately
+  - Kitchen runs smoothly even when busy
+
+**In UART terms:**
+
+**TX Without FIFO:**
+```
+CPU: "Send this byte!"
+UART TX: "Sorry, I'm still transmitting the previous byte!"
+CPU: *waits... wasting cycles*
+```
+
+**TX With FIFO:**
+```
+CPU: "Send these 16 bytes!"
+UART TX FIFO: "Got them! You can do other work now."
+UART TX: *transmits bytes one by one from FIFO*
+CPU: *free to do other important work*
+```
+
+**RX Without FIFO:**
+```
+UART RX: "New byte received!"
+CPU: *busy with other task, can't read immediately*
+UART RX: "Another byte coming! Overwriting previous one!"
+Result: DATA LOST! ❌
+```
+
+**RX With FIFO:**
+```
+UART RX: "Byte 1 stored in FIFO"
+UART RX: "Byte 2 stored in FIFO"
+UART RX: "Byte 3 stored in FIFO"
+CPU: *finishes task, reads all 3 bytes from FIFO*
+Result: All data preserved! ✅
+```
+
+### FIFO Fundamentals
+
+**FIFO** = First In, First Out (like a queue/line at a store)
+
+**Key Concepts:**
+
+1. **Depth**: How many bytes the FIFO can hold
+   - Common depths: 4, 8, 16, 32, 64 bytes
+   - Example: 16-byte FIFO = can store 16 bytes before overflowing
+   - **Trade-off**: Deeper FIFO = more chip area but better buffering
+
+2. **Write Pointer**: Points to where next byte will be written
+3. **Read Pointer**: Points to where next byte will be read from
+4. **Full Flag**: Signals when FIFO cannot accept more data
+5. **Empty Flag**: Signals when FIFO has no data to read
+6. **Count**: Number of bytes currently in FIFO
+
+### FIFO Operation Example
+
+```
+Initial State (Empty FIFO, depth=8):
+[_][_][_][_][_][_][_][_]
+ ↑
+ WR/RD (both at position 0)
+ Empty=1, Full=0, Count=0
+
+After writing 'A', 'B', 'C':
+[A][B][C][_][_][_][_][_]
+ ↑      ↑
+ RD     WR
+ Empty=0, Full=0, Count=3
+
+Read one byte ('A'):
+[_][B][C][_][_][_][_][_]
+    ↑  ↑
+    RD WR
+ Empty=0, Full=0, Count=2
+
+Write 'D', 'E', 'F', 'G', 'H', 'I':
+[_][B][C][D][E][F][G][H]
+    ↑                  ↑
+    RD                 WR
+ Empty=0, Full=0, Count=7
+
+Write 'J' (wraps around):
+[J][B][C][D][E][F][G][H]
+ ↑  ↑
+ WR RD
+ Empty=0, Full=1, Count=8  ← FIFO FULL!
+
+Attempt to write 'K':
+REJECTED! Full flag prevents data loss.
+```
+
+### FIFO Watermarks (Thresholds)
+
+**Think of watermarks like fuel gauge indicators:**
+- 🔴 **Full**: Tank at maximum (stop pumping!)
+- 🟡 **High-Water Mark**: Tank 75% full (slow down!)
+- 🟢 **Half**: Tank 50% (normal operation)
+- 🟡 **Low-Water Mark**: Tank 25% (time to refuel soon)
+- 🔴 **Empty**: Tank empty (urgent!)
+
+**In FIFO terms:**
+
+**TX FIFO Watermarks:**
+```
+Depth = 16 bytes
+
+[16] ━━━━━━━━━━━━━━━━ FULL (trigger: FIFO_FULL interrupt)
+[15]
+[14]
+[13]
+[12] ━━━━━━━━━━━━━━━━ HIGH (trigger: ALMOST_FULL, slow down CPU writes)
+[11]
+[10]
+[09]
+[08]
+[07]
+[06]
+[05]
+[04] ━━━━━━━━━━━━━━━━ LOW (trigger: ALMOST_EMPTY, CPU should write more)
+[03]
+[02]
+[01]
+[00] ━━━━━━━━━━━━━━━━ EMPTY (trigger: FIFO_EMPTY interrupt)
+```
+
+**Why Watermarks Matter:**
+
+1. **TX FIFO Low Watermark** (e.g., 4 bytes left):
+   - Interrupt CPU: "Please send more data soon!"
+   - Prevents TX underrun (UART idle because FIFO is empty)
+
+2. **RX FIFO High Watermark** (e.g., 12 bytes filled):
+   - Interrupt CPU: "Please read data soon!"
+   - Prevents RX overrun (data lost because FIFO overflows)
+
+3. **Efficient Bulk Transfers**:
+   - CPU can wait until LOW watermark → then write 8-12 bytes at once
+   - Reduces interrupt overhead (fewer interrupts = less CPU time wasted)
+
+### FIFO Registers & Status
+
+**Typical FIFO Control Registers:**
+
+```
+TX_FIFO_CTRL (0x14):
+  [7:4] TX_THRESHOLD - Watermark level (0-15)
+  [3]   TX_FIFO_RESET - Write 1 to clear FIFO
+  [2]   TX_FIFO_INT_EN - Enable TX FIFO interrupt
+  [1:0] Reserved
+
+TX_FIFO_STATUS (0x18):
+  [7:4] TX_FIFO_COUNT - Number of bytes in FIFO (0-16)
+  [3]   TX_FIFO_FULL
+  [2]   TX_FIFO_ALMOST_FULL (count > threshold)
+  [1]   TX_FIFO_ALMOST_EMPTY (count < threshold)
+  [0]   TX_FIFO_EMPTY
+
+RX_FIFO_CTRL (0x1C):
+  [7:4] RX_THRESHOLD
+  [3]   RX_FIFO_RESET
+  [2]   RX_FIFO_INT_EN
+  [1:0] Reserved
+
+RX_FIFO_STATUS (0x20):
+  [7:4] RX_FIFO_COUNT
+  [3]   RX_FIFO_FULL
+  [2]   RX_FIFO_ALMOST_FULL
+  [1]   RX_FIFO_ALMOST_EMPTY
+  [0]   RX_FIFO_EMPTY
+```
+
+### FIFO Benefits
+
+✅ **CPU Efficiency**: Write/read multiple bytes in bursts  
+✅ **Data Integrity**: No data loss during CPU busy periods  
+✅ **Reduced Interrupts**: Process data in batches  
+✅ **Higher Throughput**: Continuous transmission without gaps  
+✅ **Tolerance to Jitter**: Absorbs timing variations  
+
+### FIFO Design Considerations
+
+**Depth Selection:**
+```
+Small FIFO (4 bytes):
+  + Less chip area
+  + Lower cost
+  - Less buffering
+  - More frequent interrupts
+  Use when: Simple, low-speed applications
+
+Medium FIFO (16 bytes):
+  + Good balance
+  + Standard in industry (16550A UART)
+  - Moderate area cost
+  Use when: General purpose applications ← RECOMMENDED
+
+Large FIFO (64+ bytes):
+  + Maximum buffering
+  + Handles burst traffic
+  - Significant chip area
+  - Higher power consumption
+  Use when: High-speed bulk data transfers
+```
+
+**Implementation Cost (Rough Estimates):**
+- 4-byte FIFO: ~150-200 cells
+- 8-byte FIFO: ~250-350 cells
+- 16-byte FIFO: ~400-600 cells
+- 32-byte FIFO: ~750-1000 cells
+
+**Our Choice:** 16-byte TX and RX FIFOs (industry standard, good balance)
+
+---
+
+## Hardware Flow Control: Preventing Overruns
+
+### The Problem: When Receiver Can't Keep Up
+
+**The Package Delivery Analogy:**
+
+**Without Flow Control:**
+```
+Sender: "Here's package 1!" *throws*
+Sender: "Here's package 2!" *throws*
+Sender: "Here's package 3!" *throws*
+Receiver: "Wait! My hands are full! I can't catch... *DROP* ❌"
+Result: Packages on the ground (data lost)
+```
+
+**With Flow Control (RTS/CTS):**
+```
+Receiver: "I'm Ready To receive (RTS low)"
+Sender: "Clear To Send (CTS low), sending now!"
+Sender: "Package 1" ✅
+Sender: "Package 2" ✅
+Receiver: "Hands full! NOT ready (RTS high)"
+Sender: "Okay, pausing..." *waits*
+Receiver: *processes packages*
+Receiver: "Ready again! (RTS low)"
+Sender: "Package 3" ✅
+Result: All packages received safely!
+```
+
+### RTS/CTS Signals Explained
+
+**RTS** = Request To Send (actually means "Ready To Receive"!)
+- **Driven by**: Receiver
+- **Purpose**: Tells sender if receiver is ready for data
+- **Active LOW**: RTS=0 means "I'm ready, send data"
+- **Active HIGH**: RTS=1 means "I'm busy, don't send!"
+
+**CTS** = Clear To Send
+- **Driven by**: Sender (or remote device's RTS in typical wiring)
+- **Purpose**: Tells receiver if sender is ready to receive
+- **Active LOW**: CTS=0 means "You can send data"
+- **Active HIGH**: CTS=1 means "Don't send, I'm not ready"
+
+**Typical Wiring (Full-Duplex with Flow Control):**
+```
+Device A                    Device B
+────────                    ────────
+TX ──────────────────────→ RX
+RX ←────────────────────── TX
+RTS ─────────────────────→ CTS  (A's RTS → B's CTS)
+CTS ←──────────────────── RTS  (B's RTS → A's CTS)
+GND ─────────────────────── GND
+
+Device A wants to send:
+  1. Check CTS (connected to B's RTS)
+  2. If CTS=0 (B is ready) → Send data
+  3. If CTS=1 (B is busy) → Wait
+
+Device B controls flow:
+  1. If FIFO almost full → Set RTS=1 ("STOP!")
+  2. If FIFO has space → Set RTS=0 ("GO!")
+```
+
+### Flow Control FSM
+
+**Transmitter with Flow Control:**
+```
+IDLE state:
+  if (data_to_send && !cts)  // CTS low = ready
+    → START state
+  else if (cts)  // CTS high = not ready
+    → Stay in IDLE (wait)
+
+START state:
+  Send START bit
+  → DATA state
+
+DATA state:
+  Send data bits
+  if (cts goes high during transmission):
+    ⚠️ Complete current byte (don't stop mid-byte!)
+    → After STOP bit, check CTS before next byte
+
+STOP state:
+  Send STOP bit
+  Check CTS:
+    if (!cts && more_data) → START (send next byte)
+    if (cts) → IDLE (pause transmission)
+```
+
+**Receiver Flow Control Logic:**
+```
+RX FIFO Monitor:
+  if (rx_fifo_count >= HIGH_WATERMARK)
+    rts <= 1'b1;  // Signal: "STOP sending!"
+  else if (rx_fifo_count <= LOW_WATERMARK)
+    rts <= 1'b0;  // Signal: "OK to send again"
+```
+
+### Flow Control Timing Diagram
+
+```
+Sender                         Receiver
+                                         
+TX: ─┐    ┌───┐   ┌───┬─...    ┌──── (Data bits)
+      └────┘   └───┘   └────────┘      
+     IDLE START DATA...         IDLE  
+                                         
+CTS: ──────────────────┐    ┌─────── (Receiver's RTS → Sender's CTS)
+                       └────┘          
+                       BUSY  READY    
+                       (pause)         
+                                         
+Time: ──→──→──→──→──→──→──→──→──→──→
+      Byte1 Byte2 PAUSE  Resume Byte3
+
+What happened:
+  t1: Byte 1 transmitted
+  t2: Byte 2 transmitted
+  t3: Receiver FIFO almost full → RTS goes high
+  t4: Sender sees CTS high → stops after current byte
+  t5: Receiver processes data → FIFO has space → RTS goes low
+  t6: Sender sees CTS low → resumes with Byte 3
+```
+
+### When to Use Flow Control
+
+**✅ Use Flow Control When:**
+1. High-speed data transfer (38400 bps and above)
+2. Receiver might be slower than sender (CPU interrupt latency)
+3. Large bursts of data (file transfers)
+4. RX FIFO can fill up faster than CPU reads
+5. Real-time systems where data loss is unacceptable
+
+**❌ Flow Control Not Needed When:**
+1. Low-speed communication (9600 bps)
+2. Small, infrequent messages
+3. Guaranteed CPU response time (hard real-time)
+4. One-way communication (TX only or RX only)
+5. Software flow control used instead (XON/XOFF)
+
+### Flow Control Modes
+
+**1. Hardware Flow Control (RTS/CTS):**
+- ✅ Fast response (no software delay)
+- ✅ Reliable (dedicated signals)
+- ❌ Requires extra pins (2 more wires)
+- **Use when**: Pins available, high-speed needed
+
+**2. Software Flow Control (XON/XOFF):**
+- ✅ No extra pins needed
+- ❌ Slower (in-band signaling)
+- ❌ Can fail if control characters corrupted
+- Sends special characters: XON (0x11) = "resume", XOFF (0x13) = "pause"
+- **Use when**: Pins limited, speed not critical
+
+**3. No Flow Control:**
+- ✅ Simplest implementation
+- ❌ Risk of data loss
+- **Use when**: FIFO large enough, CPU fast enough, or data loss acceptable
+
+### Our Implementation
+
+**For this project, we're implementing:**
+- ✅ 16-byte TX FIFO
+- ✅ 16-byte RX FIFO
+- ✅ Hardware flow control (RTS/CTS)
+- ✅ FIFO watermark interrupts
+- ✅ Configurable thresholds
+
+**Why?**
+- Demonstrates production-quality design
+- Prevents data loss at all baud rates
+- Efficient CPU usage (batch processing)
+- Industry-standard features (16550A compatible)
+
+---
+
+## FIFO + Flow Control: Complete Example
+
+### Scenario: Receiving a 32-byte Packet
+
+**Setup:**
+- RX FIFO: 16 bytes deep
+- High watermark: 12 bytes
+- Low watermark: 4 bytes
+- Baud rate: 115200 bps (~87 μs per byte)
+- CPU interrupt latency: ~500 μs (busy with other tasks)
+
+**Timeline:**
+
+```
+t=0ms: Packet starts arriving
+  RX FIFO: [_][_][_][_][_][_][_][_][_][_][_][_][_][_][_][_]
+  RTS: LOW (ready)
+  
+t=1ms: 11 bytes received (87μs × 11 ≈ 957μs)
+  RX FIFO: [01][02][03][04][05][06][07][08][09][10][11][_][_][_][_][_]
+  RTS: LOW (still space)
+  Count: 11
+  
+t=1.1ms: 12th byte received
+  RX FIFO: [01][02][03][04][05][06][07][08][09][10][11][12][_][_][_][_]
+  RTS: HIGH ← Watermark exceeded! Signal sender to pause!
+  Count: 12
+  Interrupt: RX_FIFO_ALMOST_FULL → CPU notified
+  
+t=1.2ms: Sender sees RTS high (via its CTS pin)
+  Sender: "Pausing after current byte completes..."
+  
+t=1.7ms: CPU responds to interrupt (500μs latency)
+  CPU reads 8 bytes from FIFO in burst
+  RX FIFO: [09][10][11][12][_][_][_][_][_][_][_][_][_][_][_][_]
+  Count: 4 ← Below low watermark!
+  RTS: LOW ← Signal sender: "Resume!"
+  
+t=1.8ms: Sender sees RTS low again
+  Sender: "Resuming transmission..."
+  Remaining 20 bytes start arriving
+  
+t=3.5ms: All 32 bytes received successfully!
+  Result: ✅ NO DATA LOST despite CPU being slower than data rate!
+```
+
+**Without FIFO or Flow Control:**
+```
+t=1ms: 11 bytes received
+  Single-byte register holds only latest byte: [11]
+  Bytes 01-10: LOST! ❌
+  
+Result: Only last byte preserved, 30 bytes lost!
+```
+
+---
+
+## Implementation Checklist (Updated)
+
+### Basic UART (Phase 1 - Completed)
+✅ Baud rate generator  
+✅ UART TX (basic)  
+✅ UART RX (basic)  
+✅ Register interface  
+✅ Interrupt generation  
+
+---
+
+## Part 4: FIFO Buffers (Enhanced UART)
+
+### Why FIFOs Matter
+
+**Problem with Basic UART:**
+The basic UART has single-byte TX/RX registers. If the CPU can't service interrupts immediately, data is lost.
+
+**Real-World Scenario:**
+```
+UART receives bytes at 115200 bps = 1 byte every 86.8 µs
+CPU interrupt latency = 200 µs (context switch, handler overhead)
+
+Timeline:
+t=0:     Byte 1 received → RX register = 0x41
+t=87µs:  Byte 2 received → RX register = 0x42  (Byte 1 OVERWRITTEN!)
+t=174µs: Byte 3 received → RX register = 0x43  (Byte 2 OVERWRITTEN!)
+t=200µs: CPU reads RX register → Gets 0x43 only
+
+Result: 2 out of 3 bytes LOST! ❌
+```
+
+**Solution: FIFO Buffers**
+```
+UART receives bytes → Stored in 16-byte FIFO
+CPU reads when ready → Multiple bytes preserved
+
+Timeline with FIFO:
+t=0:     Byte 1 → FIFO[0] = 0x41
+t=87µs:  Byte 2 → FIFO[1] = 0x42
+t=174µs: Byte 3 → FIFO[2] = 0x43
+t=200µs: CPU reads → Gets all 3 bytes!
+
+Result: Zero data loss! ✅
+```
+
+### FIFO Fundamentals
+
+**FIFO = First In, First Out**
+Think of it like a pipe: First byte in is first byte out.
+
+```
+Visual Analogy:
+    Marbles entering pipe       Marbles exiting pipe
+         ↓                            ↓
+    ┌────────────────────────────────────┐
+    │  🔴 → 🔵 → 🟢 → 🟡 → ⚪ → 🟣  →  │
+    └────────────────────────────────────┘
+    Write pointer              Read pointer
+         ↑                            ↑
+    New data enters here      Old data exits here
+```
+
+**FIFO Operations:**
+1. **Write (Push)**: Add byte to tail of FIFO
+2. **Read (Pop)**: Remove byte from head of FIFO
+3. **Full**: Cannot write more (all slots occupied)
+4. **Empty**: Cannot read more (no data available)
+
+### TX FIFO Architecture
+
+```
+CPU Interface:
+    write_data[7:0] ─►┌────────────────────────────┐
+    write_enable ─────►│                            │
+                       │      TX FIFO Buffer        │◄─── read_enable (from UART TX)
+                       │      (16 × 8-bit RAM)      │
+                       │                            │──►  read_data[7:0] (to UART TX)
+                       │  ┌──┬──┬──┬──┬──┬──┬──┐  │
+                       │  │D0│D1│D2│D3│D4│D5│..│  │
+                       │  └──┴──┴──┴──┴──┴──┴──┘  │
+                       │   ▲                    ▲   │
+                       │   │                    │   │
+                       │  WR_PTR              RD_PTR│
+    full ◄─────────────│                            │
+    empty ◄────────────│                            │
+    count[4:0] ◄───────│  (Number of bytes in FIFO)│
+                       └────────────────────────────┘
+
+Pointers:
+- WR_PTR: Points to next write location (0-15)
+- RD_PTR: Points to next read location (0-15)
+- Both wrap around: After 15, goes back to 0
+
+States:
+- Empty: WR_PTR == RD_PTR && count == 0
+- Full:  count == 16
+- Count: (WR_PTR - RD_PTR) mod 16
+```
+
+**TX FIFO Operation Example:**
+
+```
+Initial State (Empty):
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+ ▲
+ │
+WR_PTR = 0, RD_PTR = 0, count = 0, empty = 1
+
+CPU writes 0x41:
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│41│  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+ ▲  ▲
+ │  │
+ │  WR_PTR = 1
+ RD_PTR = 0, count = 1, empty = 0
+
+CPU writes 0x42, 0x43:
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│41│42│43│  │  │  │  │  │  │  │  │  │  │  │  │  │
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+ ▲     ▲
+ │     │
+ │     WR_PTR = 3
+ RD_PTR = 0, count = 3
+
+UART TX reads byte (transmitting 0x41):
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│  │42│43│  │  │  │  │  │  │  │  │  │  │  │  │  │
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+    ▲  ▲
+    │  │
+    │  WR_PTR = 3
+    RD_PTR = 1, count = 2
+
+UART TX reads byte (transmitting 0x42):
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│  │  │43│  │  │  │  │  │  │  │  │  │  │  │  │  │
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+       ▲  ▲
+       │  │
+       │  WR_PTR = 3
+       RD_PTR = 2, count = 1
+```
+
+### RX FIFO Architecture
+
+**Same structure as TX FIFO, but data flows opposite direction:**
+
+```
+UART RX Interface:
+                       ┌────────────────────────────┐
+    write_data[7:0] ──►│                            │
+    write_enable ──────►│      RX FIFO Buffer        │◄─── read_enable (from CPU)
+    (from UART RX)      │      (16 × 8-bit RAM)      │
+                       │                            │──►  read_data[7:0] (to CPU)
+                       │  ┌──┬──┬──┬──┬──┬──┬──┐  │
+                       │  │D0│D1│D2│D3│D4│D5│..│  │
+                       │  └──┴──┴──┴──┴──┴──┴──┘  │
+                       │   ▲                    ▲   │
+                       │   │                    │   │
+                       │  WR_PTR              RD_PTR│
+    full ◄─────────────│                            │
+    empty ◄────────────│                            │
+    count[4:0] ◄───────│                            │
+                       └────────────────────────────┘
+
+Write side: UART RX pushes received bytes
+Read side: CPU pops bytes when ready
+```
+
+### FIFO Watermarks & Thresholds
+
+**Watermark = Trigger level for interrupts/status**
+
+```
+16-byte FIFO with watermarks:
+
+RX FIFO (filling up):
+┌──────────────────────────────────────┐ ← 16 (Full)
+│  │  │  │  │  │  │  │  │  │  │  │  │││ ← Almost Full Watermark (14)
+│41│42│43│44│45│46│47│48│49│50│51│52│││
+│  │  │  │  │  │  │  │  │  │  │  │  │││
+│  │  │  │  │  │  │  │  │  │  │  │  │││ ← Half Full (8)
+│  │  │  │  │  │  │  │  │  │  │  │  │││
+│  │  │  │  │  │  │  │  │  │  │  │  │││
+│  │  │  │  │  │  │  │  │  │  │  │  │││ ← Low Watermark (4)
+└──────────────────────────────────────┘ ← 0 (Empty)
+
+Interrupt Strategy:
+- RX_READY interrupt when count >= 8 (half full)
+- RX_ALMOST_FULL warning when count >= 14
+- RX_OVERFLOW error when write to full FIFO
+
+TX FIFO (draining):
+- TX_EMPTY interrupt when count == 0
+- TX_LOW warning when count <= 4 (ready for more data)
+```
+
+**Configurble Watermarks:**
+```verilog
+// Register: FIFO_CTRL
+[7:4] RX_WATERMARK  (interrupt triggers when RX count >= watermark)
+[3:0] TX_WATERMARK  (interrupt triggers when TX count <= watermark)
+
+Example:
+RX_WATERMARK = 8  → Interrupt when 8+ bytes received
+TX_WATERMARK = 4  → Interrupt when 4 or fewer bytes in TX FIFO
+```
+
+### FIFO Overflow & Underflow Protection
+
+**Overflow (Writing to Full FIFO):**
+```
+TX FIFO Full (count = 16):
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│41│42│43│44│45│46│47│48│49│50│51│52│53│54│55│56│  (All slots occupied)
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+
+CPU attempts write:
+write_enable = 1, write_data = 0x57
+
+Options:
+1. Drop new byte (preserve old data) ← Common choice
+2. Overwrite oldest byte (circular buffer)
+3. Assert error flag: TX_OVERFLOW = 1
+
+Our Implementation: Drop + Set error flag
+```
+
+**Underflow (Reading from Empty FIFO):**
+```
+RX FIFO Empty (count = 0):
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  │  (No data)
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+
+CPU attempts read:
+read_enable = 1
+
+Options:
+1. Return last valid data (stale)
+2. Return 0x00 or 0xFF (magic value)
+3. Assert error flag: RX_UNDERFLOW = 1
+
+Our Implementation: Return 0x00 + Set error flag
+```
+
+---
+
+## Part 5: Hardware Flow Control (RTS/CTS)
+
+### The Flow Control Problem
+
+**Scenario: Fast Sender, Slow Receiver**
+```
+Sender transmits at 115200 bps = 11520 bytes/sec
+Receiver processes at 5000 bytes/sec (CPU busy with other tasks)
+
+Without Flow Control:
+t=0:     Receiver FIFO empty [0/16]
+t=1ms:   11 bytes received → FIFO [11/16]
+t=2ms:   11 more bytes → FIFO [16/16] FULL!
+t=3ms:   Sender keeps transmitting → OVERFLOW! ❌
+         Bytes lost, data corruption
+
+Result: Data loss inevitable without sender knowing receiver status
+```
+
+**Solution: Hardware Flow Control**
+```
+Receiver signals: "I'm busy, please wait!"
+Sender obeys: Pauses transmission until receiver ready
+
+With Flow Control:
+t=0:     Receiver FIFO [0/16], RTS=0 (ready)
+t=1ms:   FIFO [11/16], RTS=0 (still room)
+t=2ms:   FIFO [14/16], RTS=1 (almost full, STOP!)
+         Sender sees CTS=1 → Pauses transmission
+t=3ms:   CPU reads 10 bytes → FIFO [4/16]
+t=3ms:   FIFO below threshold → RTS=0 (ready again)
+         Sender sees CTS=0 → Resumes transmission
+
+Result: Zero data loss! ✅
+```
+
+### RTS/CTS Handshaking Protocol
+
+**Signal Definitions:**
+- **RTS (Request To Send)**: Output from our device
+  - RTS=0: "I'm ready to receive data"
+  - RTS=1: "I'm busy, don't send data"
+  
+- **CTS (Clear To Send)**: Input to our device
+  - CTS=0: "Remote device ready, you can transmit"
+  - CTS=1: "Remote device busy, don't transmit"
+
+**Note on Naming Confusion:**
+The naming is historical and confusing:
+- **RTS** actually means "I'm NOT ready" when HIGH (opposite of name!)
+- **CTS** actually means "Remote is NOT ready" when HIGH
+
+**Think of it as:**
+- RTS = "**R**eceiver **T**oo **S**low" flag
+- CTS = "**C**an't **T**ransmit **S**ignal"
+
+### RTS Logic (Receiver Side)
+
+```
+RX FIFO Control:
+
+┌─────────────────────────────────────┐
+│         RX FIFO Monitor             │
+│                                     │
+│  if (rx_fifo_count >= threshold):  │
+│      RTS = 1  (stop sending!)       │
+│  else:                              │
+│      RTS = 0  (ready for data)      │
+│                                     │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+        ┌─────────────┐
+        │ RTS Output  │────► To remote TX device
+        │  (GPIO pin) │
+        └─────────────┘
+
+Threshold Configuration:
+- Conservative: threshold = 12 (activate RTS early)
+- Balanced:     threshold = 14 (standard)
+- Aggressive:   threshold = 15 (risky, little margin)
+
+Example:
+RX_FIFO_THRESHOLD = 14
+
+State transitions:
+count = 13 → RTS = 0 (ready)
+count = 14 → RTS = 1 (stop!)  ← Assert RTS
+count = 13 → RTS = 0 (ready)  ← Deassert RTS
+```
+
+### CTS Logic (Transmitter Side)
+
+```
+TX State Machine with CTS:
+
+┌─────────────────────────────────────────┐
+│          UART TX FSM                    │
+│                                         │
+│  IDLE:                                  │
+│    if (tx_fifo_not_empty && CTS == 0): │
+│        → Start transmission             │
+│    else:                                │
+│        → Wait                           │
+│                                         │
+│  TRANSMITTING:                          │
+│    if (CTS == 1):                       │
+│        → Pause after current byte       │
+│    else:                                │
+│        → Continue normally              │
+│                                         │
+└──────────────┬──────────────────────────┘
+               ▲
+               │
+        ┌─────────────┐
+        │ CTS Input   │◄──── From remote RX device
+        │  (GPIO pin) │
+        └─────────────┘
+
+CTS Behavior:
+- CTS LOW (0):  Transmit normally
+- CTS HIGH (1): Hold off, wait for LOW
+- CTS can change mid-byte: Finish current byte, then pause
+```
+
+### Complete Handshake Example
+
+```
+Device A (our UART) ←→ Device B (remote device)
+
+Device A Configuration:
+- TX: Checks CTS before transmitting
+- RX: Asserts RTS when FIFO nearly full
+- Pins: TX (out), RX (in), RTS (out), CTS (in)
+
+Device B Configuration:
+- TX: Checks CTS (connected to our RTS)
+- RX: Asserts RTS (connected to our CTS)
+- Pins: TX (out), RX (in), RTS (out), CTS (in)
+
+Wiring:
+Device A              Device B
+TX ──────────────────► RX
+RX ◄────────────────── TX
+RTS ─────────────────► CTS  (A's RTS tells B when A is busy)
+CTS ◄───────────────── RTS  (B's RTS tells A when B is busy)
+
+Scenario:
+t=0:   Both devices ready
+       A: RTS=0, CTS=0
+       B: RTS=0, CTS=0
+       
+t=1:   A transmits to B (B's RX FIFO filling)
+       A: TX active, monitoring CTS=0
+       B: RX receiving, RTS=0
+       
+t=2:   B's RX FIFO almost full (14/16)
+       B: Asserts RTS=1
+       A: Sees CTS=1 → Pauses TX
+       
+t=3:   B's CPU reads FIFO → (6/16)
+       B: Deasserts RTS=0
+       A: Sees CTS=0 → Resumes TX
+       
+t=4:   A's RX FIFO almost full (14/16)
+       A: Asserts RTS=1
+       B: Sees CTS=1 → Pauses TX
+       
+t=5:   A's CPU reads FIFO → (5/16)
+       A: Deasserts RTS=0
+       B: Sees CTS=0 → Resumes TX
+```
+
+### Timing Diagrams: Flow Control
+
+```
+Scenario: Receiver FIFO fills up, uses RTS to pause sender
+
+Clock Cycles:  0    10   20   30   40   50   60   70   80
+              ─┴────┴────┴────┴────┴────┴────┴────┴────┴────
+
+RX_FIFO_COUNT ══════5════10═══14═══14═══14═══8════5════3════
+                    │         │              │
+                    │         │              │
+RTS (output)  ─────────────────┐        ┌────────────────────
+                                └────────┘
+                              (FIFO >= 14)
+
+CTS (at sender)    Same as RTS (wired)
+                              ┌────────┐
+              ─────────────────┘        └────────────────────
+
+TX_ACTIVE     ────┐                ┌────────────┐
+  (at sender)     └────────────────┘            └────────────
+                  (Transmitting)  (Paused)    (Resumed)
+
+Explanation:
+- Cycle 0-20:  Normal transmission, FIFO filling
+- Cycle 30:    FIFO reaches threshold (14), RTS asserts
+- Cycle 30-40: Sender sees CTS, pauses after current byte
+- Cycle 50:    CPU reads FIFO, count drops to 8
+- Cycle 50:    RTS deasserts, sender resumes
+```
+
+### Flow Control Configuration Registers
+
+```
+Register: FLOW_CTRL (0x2C)
+┌───┬───┬───┬───┬───┬───┬───┬───┐
+│ 7 │ 6 │ 5 │ 4 │ 3 │ 2 │ 1 │ 0 │
+└───┴───┴───┴───┴───┴───┴───┴───┘
+  │   │   │   │   └───┴───┴───┴───► RX_RTS_THRESHOLD[3:0]
+  │   │   │   └───────────────────► TX_CTS_ENABLE (1=check CTS)
+  │   │   └───────────────────────► RX_RTS_ENABLE (1=auto RTS)
+  │   └───────────────────────────► Reserved
+  └───────────────────────────────► Reserved
+
+RX_RTS_THRESHOLD: FIFO count to assert RTS (default: 14)
+TX_CTS_ENABLE:    Enable CTS checking (default: 1)
+RX_RTS_ENABLE:    Enable automatic RTS assertion (default: 1)
+
+Register: STATUS (0x04) - Updated bits
+┌───┬───┬───┬───┬───┬───┬───┬───┐
+│ 7 │ 6 │ 5 │ 4 │ 3 │ 2 │ 1 │ 0 │
+└───┴───┴───┴───┴───┴───┴───┴───┘
+  │   │   │   │   │   │   │   └───► TX_BUSY
+  │   │   │   │   │   │   └───────► RX_READY
+  │   │   │   │   │   └───────────► RX_ERROR
+  │   │   │   │   └───────────────► RTS_STATUS (current RTS output)
+  │   │   │   └───────────────────► CTS_STATUS (current CTS input)
+  │   │   └───────────────────────► TX_FIFO_EMPTY
+  │   └───────────────────────────► RX_FIFO_FULL
+  └───────────────────────────────► Reserved
+```
+
+### Advanced: Adaptive Threshold
+
+**Problem:** Fixed threshold might be too conservative or aggressive
+
+**Solution:** Dynamic threshold based on CPU responsiveness
+```
+Monitor RX interrupt latency:
+- Fast CPU (latency < 100µs):  threshold = 15 (aggressive)
+- Normal CPU (latency < 500µs): threshold = 12 (balanced)
+- Slow CPU (latency > 500µs):   threshold = 8  (conservative)
+
+Pseudocode:
+if (rx_interrupt_response_time < 100us):
+    rx_rts_threshold = 15
+elif (rx_interrupt_response_time < 500us):
+    rx_rts_threshold = 12
+else:
+    rx_rts_threshold = 8
+```
+
+---
+
+## FIFO + Flow Control: Complete System
+
+### Enhanced UART Block Diagram
+
+```
+                    Secure UART with FIFOs & Flow Control
+┌───────────────────────────────────────────────────────────────────────┐
+│                                                                       │
+│  CPU Interface                                                        │
+│  ┌────────────┐                                                       │
+│  │  Register  │                                                       │
+│  │ Interface  │                                                       │
+│  └──────┬─────┘                                                       │
+│         │                                                             │
+│         ├──────────┬──────────┬──────────┬──────────┐                │
+│         │          │          │          │          │                │
+│         ▼          ▼          ▼          ▼          ▼                │
+│  ┌──────────┬──────────┬──────────┬──────────┬──────────┐           │
+│  │ TX_DATA  │ RX_DATA  │  STATUS  │FIFO_CTRL │FLOW_CTRL │           │
+│  └────┬─────┴────┬─────┴──────────┴──────────┴──────────┘           │
+│       │          │                                                    │
+│       ▼          ▼                                                    │
+│  ┌─────────┐ ┌─────────┐                                            │
+│  │ TX FIFO │ │ RX FIFO │                                            │
+│  │ 16 bytes│ │ 16 bytes│                                            │
+│  │         │ │         │                                            │
+│  │  count  │ │  count  │──────┐                                     │
+│  │threshold│ │threshold│      │                                     │
+│  └────┬────┘ └────┬────┘      │                                     │
+│       │           │            ▼                                     │
+│       │           │      ┌──────────┐                                │
+│       │           │      │   RTS    │                                │
+│       │           │      │ Generator│───► RTS (output)               │
+│       │           │      └──────────┘                                │
+│       ▼           ▼                                                   │
+│  ┌─────────┐ ┌─────────┐                                            │
+│  │ UART TX │ │ UART RX │                                            │
+│  │  FSM    │ │  FSM    │                                            │
+│  └────┬────┘ └────┬────┘                                            │
+│       │           │                                                   │
+│       │◄──────────┼──── CTS (input)                                 │
+│       │           │                                                   │
+│       ▼           ▼                                                   │
+│     TX pin      RX pin                                                │
+│       │           │                                                   │
+└───────┼───────────┼───────────────────────────────────────────────────┘
+        │           │
+        ▼           ▼
+    Serial Line (with flow control)
+```
+
+### Performance Comparison
+
+**Without FIFOs or Flow Control:**
+```
+- Max burst: 1 byte (single register)
+- CPU must respond within: 86.8 µs @ 115200 bps
+- Data loss probability: HIGH (any delay = lost data)
+- Suitable for: Slow, simple applications
+```
+
+**With FIFOs Only:**
+```
+- Max burst: 16 bytes (FIFO depth)
+- CPU must respond within: 1.39 ms @ 115200 bps
+- Data loss probability: MEDIUM (still possible if burst > 16)
+- Suitable for: Most embedded applications
+```
+
+**With FIFOs + Flow Control:**
+```
+- Max burst: Unlimited (sender pauses when needed)
+- CPU response time: Flexible (seconds if needed)
+- Data loss probability: ZERO (hardware guarantees)
+- Suitable for: Professional, production systems
+```
+
+### Enhanced UART (Phase 2 - Next Steps)
+📋 TX FIFO (16 bytes) ← Section complete ✅  
+📋 RX FIFO (16 bytes) ← Section complete ✅  
+📋 FIFO watermark detection ← Section complete ✅  
+📋 RTS output (receiver flow control) ← Section complete ✅  
+📋 CTS input (transmitter flow control) ← Section complete ✅  
+📋 Updated status registers ← Section complete ✅  
+📋 FIFO control registers ← Section complete ✅  
+📋 Enhanced testing (FIFO overflow, flow control)  
+
+---
+
+**You're now ready to implement a production-grade UART peripheral!** 🎉
+
+The combination of FIFOs and flow control transforms a basic UART into a robust, efficient communication interface suitable for real-world applications. These features are found in every professional UART implementation, from embedded systems to industrial equipment.
+
+Good luck with your implementation!
