@@ -7,12 +7,13 @@
  * Connects TinyQV CPU bus to UART TX/RX modules.
  * 
  * Register Map (6-bit address space):
- * 0x00 - CTRL:   [3:0] baud_sel, [4] tx_enable, [5] rx_enable
- * 0x04 - STATUS: [0] tx_busy, [1] rx_ready, [2] rx_error (read-only)
- * 0x08 - TX_DATA: [7:0] data to transmit (write triggers transmission)
- * 0x0C - RX_DATA: [7:0] received data (read-only)
- * 0x10 - INT_EN: [0] tx_done_int_en, [1] rx_ready_int_en
- * 0x14 - INT_CLR: [0] clear_tx_int, [1] clear_rx_int (write 1 to clear)
+ * 0x00 - CTRL:      [3:0] baud_sel, [4] tx_enable, [5] rx_enable
+ * 0x04 - STATUS:    [0] tx_busy, [1] rx_ready, [2] rx_error (read-only)
+ * 0x08 - TX_DATA:   [7:0] data to transmit (write triggers transmission)
+ * 0x0C - RX_DATA:   [7:0] received data (read-only)
+ * 0x10 - INT_EN:    [0] tx_done_int_en, [1] rx_ready_int_en
+ * 0x14 - INT_CLR:   [0] clear_tx_int, [1] clear_rx_int (write 1 to clear)
+ * 0x18 - FLOW_CTRL: [0] flow_ctrl_en (enable RTS/CTS flow control)
  */
 module uart_register_interface (
     input  wire        clk,
@@ -39,17 +40,21 @@ module uart_register_interface (
     // Baud rate selection
     output wire [3:0]  baud_sel,
     
+    // Flow control enable
+    output wire        flow_ctrl_en,
+    
     // Interrupt output
     output wire        uart_interrupt
 );
 
     // Register addresses
-    localparam ADDR_CTRL    = 6'h00;
-    localparam ADDR_STATUS  = 6'h04;
-    localparam ADDR_TX_DATA = 6'h08;
-    localparam ADDR_RX_DATA = 6'h0C;
-    localparam ADDR_INT_EN  = 6'h10;
-    localparam ADDR_INT_CLR = 6'h14;
+    localparam ADDR_CTRL      = 6'h00;
+    localparam ADDR_STATUS    = 6'h04;
+    localparam ADDR_TX_DATA   = 6'h08;
+    localparam ADDR_RX_DATA   = 6'h0C;
+    localparam ADDR_INT_EN    = 6'h10;
+    localparam ADDR_INT_CLR   = 6'h14;
+    localparam ADDR_FLOW_CTRL = 6'h18;
     
     // Registers
     reg [7:0] ctrl_reg;       // [3:0] baud_sel, [4] tx_en, [5] rx_en
@@ -57,6 +62,7 @@ module uart_register_interface (
     reg [7:0] rx_data_reg;    // Received data (latched)
     reg [1:0] int_en_reg;     // [0] tx_done_int_en, [1] rx_ready_int_en
     reg [1:0] int_status_reg; // [0] tx_done_pending, [1] rx_ready_pending
+    reg       flow_ctrl_reg;  // [0] flow_ctrl_en
     
     // Status flags (read-only, directly from UART modules)
     wire [7:0] status_reg;
@@ -64,6 +70,9 @@ module uart_register_interface (
     
     // Extract baud_sel from control register
     assign baud_sel = ctrl_reg[3:0];
+    
+    // Extract flow control enable
+    assign flow_ctrl_en = flow_ctrl_reg;
     
     // Assign tx_data output
     assign tx_data = tx_data_reg;
@@ -81,6 +90,7 @@ module uart_register_interface (
             rx_data_reg    <= 8'h00;
             int_status_reg <= 2'b00;
             tx_busy_prev   <= 1'b0;
+            flow_ctrl_reg  <= 1'b0;   // Flow control disabled by default
         end else begin
             // Default: clear tx_start pulse after 1 cycle
             tx_start <= 1'b0;
@@ -122,6 +132,10 @@ module uart_register_interface (
                         if (data_in[1]) int_status_reg[1] <= 1'b0;
                     end
                     
+                    ADDR_FLOW_CTRL: begin
+                        flow_ctrl_reg <= data_in[0];
+                    end
+                    
                     default: begin
                         // Ignore writes to undefined addresses
                     end
@@ -135,13 +149,14 @@ module uart_register_interface (
     
     always @(*) begin
         case (address)
-            ADDR_CTRL:    read_data = {24'h0, ctrl_reg};
-            ADDR_STATUS:  read_data = {24'h0, status_reg};
-            ADDR_TX_DATA: read_data = {24'h0, tx_data_reg};
-            ADDR_RX_DATA: read_data = {24'h0, rx_data_reg};
-            ADDR_INT_EN:  read_data = {30'h0, int_en_reg};
-            ADDR_INT_CLR: read_data = {30'h0, int_status_reg};
-            default:      read_data = 32'h00000000;
+            ADDR_CTRL:      read_data = {24'h0, ctrl_reg};
+            ADDR_STATUS:    read_data = {24'h0, status_reg};
+            ADDR_TX_DATA:   read_data = {24'h0, tx_data_reg};
+            ADDR_RX_DATA:   read_data = {24'h0, rx_data_reg};
+            ADDR_INT_EN:    read_data = {30'h0, int_en_reg};
+            ADDR_INT_CLR:   read_data = {30'h0, int_status_reg};
+            ADDR_FLOW_CTRL: read_data = {31'h0, flow_ctrl_reg};
+            default:        read_data = 32'h00000000;
         endcase
     end
     
