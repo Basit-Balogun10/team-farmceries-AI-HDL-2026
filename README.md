@@ -1,6 +1,6 @@
 # Team Farmceries - AI Hardware Design League 2026
 
-Building real silicon using AI assistants. This repository documents our journey through the [AI-HDL 2026](https://efabless.com/ai-hdl) competition design phases.
+Building real silicon using AI assistants. This repository documents our journey through the [AI-HDL 2026](https://github.com/prismlabarizona/AIHDL-2026/) competition design phases.
 
 ## Design Phase 1: UART Peripheral
 
