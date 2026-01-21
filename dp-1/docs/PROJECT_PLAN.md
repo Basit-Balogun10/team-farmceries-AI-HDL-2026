@@ -1,6 +1,6 @@
-# AI-HDL DP#1 Project Plan - UART Peripheral Implementation
+# AI-HDL DP#1 Project Plan - Secure UART Peripheral Implementation
 
-**Project**: UART Peripheral for TinyQV RISC-V Core  
+**Project**: Secure UART Peripheral with AES Encryption for TinyQV RISC-V Core  
 **Team**: Team Farmceries  
 **Deadline**: January 28, 2026  
 **Milestone Review**: January 29, 2026
@@ -10,18 +10,22 @@
 ## Project Overview
 
 ### Objective
-Design and implement a synthesizable UART (Universal Asynchronous Receiver/Transmitter) peripheral that interfaces with the TinyQV RISC-V core via a 32-bit register-based interface.
+Design and implement a production-grade secure UART (Universal Asynchronous Receiver/Transmitter) peripheral with hardware encryption, FIFO buffers, and flow control that interfaces with the TinyQV RISC-V core via a 32-bit register-based interface.
 
 ### Success Criteria
-1. ✅ Synthesizable RTL (passes Yosys)
-2. ✅ Timing closure at 70 MHz (14ns clock period)
-3. ✅ Passing testbenches (functional verification)
-4. ✅ Complete PPA analysis (OpenLANE)
-5. ✅ Full documentation with LLM prompt logs
+1. ✅ Synthesizable RTL (passes Yosys) - **Phase 1 Complete**
+2. ✅ Timing closure at 70 MHz (14ns clock period) - **Phase 1 Complete**
+3. ✅ Passing testbenches (functional verification) - **Phase 1: 37/37 tests passing**
+4. ✅ Complete PPA analysis (OpenLANE) - **Phase 1: 0.018mm², 0ns WNS**
+5. ✅ Full documentation with LLM prompt logs - **Phase 1 Complete**
+6. 🔄 TX/RX FIFOs (16 bytes each) - **Phase 2 In Progress**
+7. 🔄 Hardware flow control (RTS/CTS) - **Phase 2 In Progress**
+8. 🔄 AES-128 encryption engine - **Phase 2 In Progress**
+9. 🔄 Secure communication integration - **Phase 2 In Progress**
 
 ---
 
-## Technical Requirements
+## Technical Requirements (Enhanced)
 
 ### 1. Interface Requirements
 
@@ -30,179 +34,331 @@ Design and implement a synthesizable UART (Universal Asynchronous Receiver/Trans
 - 32-bit data input/output
 - Read/write control signals
 - Compatible with TinyQV memory map
+- **Enhanced**: AES key registers (4 × 32-bit)
 
 **UART Signals**
 - RX (Receive): `ui_in[7]` - Serial data input
 - TX (Transmit): `uo_out[0]` - Serial data output
-- Interrupt: `user_interrupt` - RX data ready notification
+- **RTS (Request To Send)**: `uo_out[1]` - Flow control output
+- **CTS (Clear To Send)**: `ui_in[6]` - Flow control input
+- Interrupt: `user_interrupt` - Multiple interrupt sources
 
 **Clock & Reset**
 - System clock: 70 MHz
 - Asynchronous active-low reset
 
-### 2. Functional Requirements
+### 2. Functional Requirements (Enhanced)
 
 **Transmission (TX)**
 - Configurable baud rate (9600, 19200, 38400, 115200 bps)
-- 8 data bits
-- No parity
-- 1 stop bit
-- TX FIFO (optional but recommended, depth 4-8)
+- 8 data bits, No parity, 1 stop bit
+- **TX FIFO: 16 bytes** (buffering)
+- **CTS monitoring**: Pause transmission when remote busy
+- **AES encryption**: Encrypt blocks before transmission
 
 **Reception (RX)**
 - Same baud rates as TX
 - Same frame format (8N1)
-- RX FIFO (optional but recommended, depth 4-8)
-- Interrupt on data ready
+- **RX FIFO: 16 bytes** (buffering)
+- **RTS assertion**: Signal remote to pause when FIFO nearly full
+- **AES decryption**: Decrypt blocks after reception
+- Interrupt on data ready / FIFO threshold
 
-**Registers (Memory-Mapped)**
+**Encryption (AES-128)**
+- Standard AES-128 encryption/decryption
+- 128-bit block size (16 bytes)
+- Configurable encryption key (128-bit)
+- Automatic encryption on TX, decryption on RX
+- Integration with FIFO depth (16 bytes = 1 AES block)
+
+**Registers (Memory-Mapped - Enhanced)**
 | Address | Register | R/W | Description |
 |---------|----------|-----|-------------|
-| 0x00 | CTRL | W | Control: baud rate select, enable |
-| 0x04 | STATUS | R | Status: TX busy, RX ready, FIFO status |
+| 0x00 | CTRL | W | Control: baud rate, enable, AES enable |
+| 0x04 | STATUS | R | Status: TX/RX busy, FIFO counts, RTS/CTS |
 | 0x08 | TX_DATA | W | Transmit data register |
 | 0x0C | RX_DATA | R | Receive data register |
+| 0x10 | INT_EN | R/W | Interrupt enable |
+| 0x14 | INT_CLR | W | Interrupt clear |
+| 0x18 | AES_KEY_0 | W | AES Key bits [31:0] |
+| 0x1C | AES_KEY_1 | W | AES Key bits [63:32] |
+| 0x20 | AES_KEY_2 | W | AES Key bits [95:64] |
+| 0x24 | AES_KEY_3 | W | AES Key bits [127:96] |
+| 0x28 | AES_CTRL | R/W | AES control (key load, mode) |
+| 0x2C | FLOW_CTRL | R/W | Flow control config (RTS threshold) |
 
-### 3. Performance Requirements
+### 3. Performance Requirements (Updated)
 
 **Timing**
 - Clock frequency: 70 MHz (14ns period)
 - Setup/hold timing: Must meet at all corners
 - Target WNS: 0 ns or better
+- AES latency: ~24 cycles per 128-bit block
 
 **Area**
-- Die area budget: ~0.02 mm² (similar to example peripheral)
-- Cell utilization: 50-70%
+- Die area budget: ~0.050 mm² (increased from basic UART)
+- Basic UART: 0.018mm² (525 cells)
+- Estimated additions:
+  - FIFOs: ~400-600 cells
+  - Flow control: ~50-100 cells
+  - AES-128: ~1500-2000 cells
+  - **Total estimate: ~2500-3200 cells**
 
 **Power**
-- Typical power: < 10 µW (estimated)
+- Typical power: < 15 µW (with AES active)
+- Idle power: < 5 µW
 - Minimize switching activity when idle
 
 ---
 
-## Implementation Plan
+## Implementation Plan (Revised)
 
-### Phase 1: Design & Planning (Jan 19) ✅
+### Phase 1: Basic UART (Jan 17-20) ✅ COMPLETED
 **Tasks:**
 - [x] Study UART fundamentals
 - [x] Review interface specifications
 - [x] Create block diagrams
 - [x] Define register map
 - [x] Set up project structure
+- [x] Implement baud generator
+- [x] Implement UART TX
+- [x] Implement UART RX
+- [x] Implement register interface
+- [x] Integration and testing (37 tests)
+- [x] Synthesis and PPA analysis
+
+**Results:**
+- ✅ 37/37 tests passing
+- ✅ 0.01795mm² area
+- ✅ 0ns WNS (timing met)
+- ✅ 0.0014µW power
+- ✅ Complete documentation
 
 **Deliverables:**
-- UART_FUNDAMENTALS.md
-- PROJECT_PLAN.md
-- BLOCK_DIAGRAMS.md
+- uart/UART_FUNDAMENTALS.md
+- uart/BLOCK_DIAGRAMS.md
+- PROJECT_PLAN.md (v1)
+- Basic UART Verilog modules
+- 37 passing tests
+- DESIGN_REPORT.md
+- PPA_ANALYSIS.md
 
 ---
 
-### Phase 2: Baud Rate Generator (Jan 20)
+### Phase 2: FIFO Buffers & Flow Control (Jan 21-22) 🔄 IN PROGRESS
+
+**Day 1 (Jan 21): TX/RX FIFOs**
 **Tasks:**
-- [ ] Design baud rate clock divider
-- [ ] Support multiple baud rates
-- [ ] Implement configuration logic
-- [ ] Create testbench for baud generator
+- [ ] Design TX FIFO (16 bytes, dual-pointer)
+- [ ] Design RX FIFO (16 bytes, dual-pointer)
+- [ ] Implement FIFO control logic (full/empty/count)
+- [ ] Add watermark detection
+- [ ] Update register interface for FIFO status
+- [ ] Create FIFO testbenches
 
 **LLM Prompts to Use:**
-- "Design a configurable baud rate generator for UART at 70MHz system clock"
-- "Create testbench for baud rate generator with 9600, 115200 bps"
+- "Design a 16-byte FIFO buffer with read/write pointers and status flags"
+- "Implement watermark detection for UART FIFO to trigger interrupts"
+- "Create testbench for FIFO overflow and underflow conditions"
 
 **Verification:**
-- Test at 9600 bps: 70MHz / 9600 = 7291.67 clocks per bit
-- Test at 115200 bps: 70MHz / 115200 = 607.64 clocks per bit
+- Test FIFO full/empty conditions
+- Verify watermark interrupts
+- Test overflow/underflow protection
+- Burst write/read tests
 
 **Success Criteria:**
-- Accurate baud rate generation (< 2% error)
-- Synthesis passes
-- Testbench validates timing
+- FIFOs correctly buffer data
+- Status flags accurate
+- No data loss on full/empty conditions
+- Tests passing
 
----
-
-### Phase 3: UART Transmitter (Jan 21)
+**Day 2 (Jan 22): Hardware Flow Control**
 **Tasks:**
-- [ ] Implement TX state machine (IDLE, START, DATA, STOP)
-- [ ] Add TX shift register
-- [ ] Integrate baud rate generator
-- [ ] Optional: Add TX FIFO (depth 4-8)
-- [ ] Create TX testbench
+- [ ] Implement RTS output logic (RX FIFO threshold-based)
+- [ ] Implement CTS input monitoring (TX pause logic)
+- [ ] Add flow control configuration registers
+- [ ] Update UART TX FSM for CTS checking
+- [ ] Create flow control testbenches
 
 **LLM Prompts to Use:**
-- "Implement UART transmitter with 8N1 format and configurable baud rate"
-- "Design a simple FIFO buffer for UART TX with depth 8"
-- "Create testbench to verify UART transmission of 0x55, 0xAA patterns"
+- "Implement RTS/CTS hardware flow control for UART"
+- "Design flow control logic that pauses TX when CTS is asserted"
+- "Create testbench simulating backpressure with RTS/CTS handshaking"
 
 **Verification:**
-- Send test patterns: 0x00, 0x55, 0xAA, 0xFF
-- Verify start bit, data bits, stop bit
-- Check bit timing with oscilloscope/waveform
+- Test RTS assertion when RX FIFO nearly full
+- Test TX pause when CTS asserted
+- Test resume when CTS deasserted
+- End-to-end flow control test
 
 **Success Criteria:**
-- Correct serial bit sequence
-- Accurate bit timing
-- TX busy flag works correctly
+- RTS correctly reflects RX FIFO status
+- TX properly pauses on CTS
+- Zero data loss with flow control
+- Tests passing
 
 ---
 
-### Phase 4: UART Receiver (Jan 22)
+### Phase 3: AES-128 Encryption Engine (Jan 23-25) 🔄 PLANNED
+
+**Day 1 (Jan 23): AES Core Components**
 **Tasks:**
-- [ ] Implement RX state machine
-- [ ] Add oversampling (16x recommended)
-- [ ] Implement start bit detection
-- [ ] Add RX shift register
-- [ ] Optional: Add RX FIFO (depth 4-8)
-- [ ] Create RX testbench
+- [ ] Implement S-Box (SubBytes transformation)
+- [ ] Implement ShiftRows logic
+- [ ] Implement MixColumns (Galois field multiplication)
+- [ ] Implement AddRoundKey (XOR operation)
+- [ ] Create component testbenches
 
 **LLM Prompts to Use:**
-- "Design UART receiver with 16x oversampling and start bit detection"
-- "Implement majority voting for noise immunity in UART RX"
-- "Create testbench that sends serial data and verifies UART reception"
+- "Implement AES-128 S-Box lookup table in Verilog"
+- "Design ShiftRows transformation for AES state matrix"
+- "Implement MixColumns with Galois field multiplication in GF(2^8)"
+- "Create testbenches for individual AES transformations with known test vectors"
 
 **Verification:**
-- Receive test patterns from TX
-- Verify data integrity
-- Test with noisy input (glitches)
-- Check interrupt generation
+- Test S-Box with NIST test vectors
+- Verify ShiftRows byte positions
+- Test MixColumns with known inputs
+- Component-level validation
 
-**Success Criteria:**
-- Correctly receives all test patterns
-- Handles noise gracefully
-- RX ready interrupt triggers properly
+**Day 2 (Jan 24): Key Expansion & Round Function**
+**Tasks:**
+- [ ] Implement key expansion module (11 round keys)
+- [ ] Design round function FSM
+- [ ] Integrate SubBytes → ShiftRows → MixColumns → AddRoundKey
+- [ ] Implement encryption/decryption modes
+- [ ] Create round function testbenches
+
+**LLM Prompts to Use:**
+- "Implement AES-128 key expansion algorithm with round constants"
+- "Design AES encryption round function FSM (10 rounds)"
+- "Create testbench for AES encryption with NIST FIPS 197 test vectors"
+
+**Verification:**
+- Test key expansion with known keys
+- Verify 10-round encryption
+- Test with NIST standard test vectors
+- Timing verification (~24 cycles/block)
+
+**Day 3 (Jan 25): AES Top-Level Integration**
+**Tasks:**
+- [ ] Create AES top-level module
+- [ ] Add AES control registers
+- [ ] Implement AES key storage (128-bit)
+- [ ] Add encryption/decryption control
+- [ ] Comprehensive AES testing
+
+**LLM Prompts to Use:**
+- "Integrate AES-128 components into top-level encryption engine"
+- "Design register interface for AES key loading and control"
+- "Create comprehensive testbench for full AES-128 encryption/decryption"
+
+**Verification:**
+- Full encryption/decryption cycle
+- Multiple key testing
+- Performance validation
+- Edge case testing
 
 ---
 
-### Phase 5: Register Interface (Jan 23)
+### Phase 4: Secure UART Integration (Jan 26) 🔄 PLANNED
+
 **Tasks:**
-- [ ] Implement register read/write logic
-- [ ] Add control register (baud rate, enable)
-- [ ] Add status register (TX busy, RX ready)
-- [ ] Connect TX_DATA, RX_DATA registers
-- [ ] Integrate with TinyQV interface
+- [ ] Integrate AES with TX FIFO (encrypt before transmit)
+- [ ] Integrate AES with RX FIFO (decrypt after receive)
+- [ ] Update peripheral top-level module
+- [ ] Add AES registers to memory map
+- [ ] Create end-to-end secure communication tests
 
 **LLM Prompts to Use:**
-- "Create memory-mapped register interface for UART peripheral"
-- "Design control/status registers for UART with baud rate configuration"
-- "Integrate UART registers with TinyQV 32-bit bus interface"
+- "Integrate AES encryption engine with UART TX data path"
+- "Design control logic to trigger AES encryption when TX FIFO has 16 bytes"
+- "Create testbench for secure UART: encrypt→transmit→receive→decrypt"
 
-**Register Definitions:**
+**Verification:**
+- Test plaintext → encrypt → transmit flow
+- Test receive → decrypt → plaintext flow
+- Verify encryption correctness
+- End-to-end loopback test
+- Performance measurement
 
-**CTRL (0x00) - Control Register**
-```
-[31:8] Reserved
-[7:4]  BAUD_SEL (0=9600, 1=19200, 2=38400, 3=115200)
-[3:1]  Reserved
-[0]    ENABLE (1=enabled, 0=disabled)
-```
+**Success Criteria:**
+- Seamless AES integration
+- Correct encryption/decryption
+- All data path tests passing
+- Timing still met (70MHz)
 
-**STATUS (0x04) - Status Register**
-```
-[31:8] Reserved
-[7:4]  RX_FIFO_COUNT (if FIFO implemented)
-[3]    TX_BUSY
-[2]    RX_READY
-[1]    RX_OVERRUN
-[0]    RX_ERROR
-```
+---
+
+### Phase 5: Synthesis & PPA Analysis (Jan 27) 🔄 PLANNED
+
+**Tasks:**
+- [ ] Run Verilator linting on all new modules
+- [ ] Fix any lint warnings
+- [ ] Run Yosys synthesis
+- [ ] Analyze cell count and area
+- [ ] Run full OpenLANE PPA
+- [ ] Check timing, area, power metrics
+- [ ] Optimize if needed
+
+**Verification:**
+- Synthesis: 0 errors, minimal warnings
+- Area: ≤ 0.050 mm²
+- Timing: WNS ≥ 0 ns
+- Power: ≤ 15 µW
+
+**Success Criteria:**
+- Clean synthesis
+- All PPA targets met
+- Design fits within constraints
+
+---
+
+### Phase 6: Documentation & Submission (Jan 27-28) 🔄 PLANNED
+
+**Day 1 (Jan 27): Technical Documentation**
+**Tasks:**
+- [ ] Update DESIGN_REPORT.md (add FIFOs, flow control, AES)
+- [ ] Update PPA_ANALYSIS.md with new metrics
+- [ ] Update all README files
+- [ ] Organize prompt logs (Phase 2 logs)
+- [ ] Create final diagrams/screenshots
+
+**Day 2 (Jan 28): Final Review & Submission**
+**Tasks:**
+- [ ] Final testing (all 50+ tests)
+- [ ] Code review and cleanup
+- [ ] Final synthesis run
+- [ ] Create git tag: `DP1-Final-Submission`
+- [ ] Push to GitHub
+- [ ] Verify submission package
+
+**Deliverables:**
+- Updated DESIGN_REPORT.md
+- Updated PPA_ANALYSIS.md
+- Complete prompt logs (Phases 1 & 2)
+- All test results
+- Synthesis reports
+- README updates
+
+---
+
+## Daily Schedule (Updated)
+
+**Jan 17-20**: Basic UART ✅ COMPLETE
+**Jan 21**: FIFOs 🔄 TODAY
+**Jan 22**: Flow Control
+**Jan 23**: AES Components
+**Jan 24**: AES Integration (rounds + keys)
+**Jan 25**: AES Top-Level
+**Jan 26**: Secure UART Integration
+**Jan 27**: Synthesis, PPA, Documentation
+**Jan 28**: Final Review & Submission
+
+---
+
+## Risk Management (Updated)
 
 **Verification:**
 - Write to CTRL, read back
@@ -323,47 +479,59 @@ submissions/
 
 ---
 
-## Risk Management
+## Risk Management (Updated)
 
-### Risk 1: Timing Violations
-**Probability**: Medium  
+### Risk 1: AES Timing Closure
+**Probability**: Medium-High  
 **Impact**: High  
 **Mitigation**:
-- Start with simple design
-- Run synthesis early and often
-- Use pipelining if needed
-- Reduce combinational logic depth
+- Use iterative AES (reuse single round function)
+- Keep combinational paths short
+- Run synthesis incrementally
+- Pipeline AES if timing critical
+- **Fallback**: Reduce clock or simplify AES
 
-### Risk 2: Testbench Failures
+### Risk 2: Area Budget Exceeded
 **Probability**: Medium  
 **Impact**: Medium  
 **Mitigation**:
-- Test incrementally (module by module)
-- Use waveform viewer to debug
-- Create simple tests first
-- Use known-good patterns
+- Iterative AES saves ~10× vs pipelined
+- ROM-based S-Box vs combinational
+- Optimize FIFO implementation
+- **Fallback**: Reduce FIFO depth or simplify AES
 
-### Risk 3: Time Constraints
+### Risk 3: Integration Complexity
 **Probability**: Medium  
-**Impact**: High  
-**Mitigation**:
-- Prioritize core functionality (8N1, single baud rate)
-- Make FIFO optional
-- Focus on one feature at a time
-- Skip advanced features if needed
-
-### Risk 4: LLM-Generated Code Issues
-**Probability**: High  
 **Impact**: Medium  
 **Mitigation**:
-- Review all generated code carefully
-- Test each module independently
-- Use multiple prompts for same function
-- Iterate with LLM to fix issues
+- Test each module independently first
+- Incremental integration (FIFOs → Flow Control → AES)
+- Use waveform debugging extensively
+- **Fallback**: Submit with FIFOs + Flow Control only
+
+### Risk 4: Time Constraints (Enhanced Scope)
+**Probability**: Low-Medium  
+**Impact**: High  
+**Mitigation**:
+- Proven velocity: Basic UART in 2 days
+- Infrastructure already setup
+- AI-assisted acceleration
+- Clear 7-day roadmap
+- **Fallback**: Prioritize FIFOs + Flow Control, AES if time permits
+
+### Risk 5: AES Functional Correctness
+**Probability**: Low-Medium  
+**Impact**: High  
+**Mitigation**:
+- Use NIST FIPS 197 test vectors
+- Test each component independently
+- Validate with known AES implementations
+- AI can generate well-tested AES code
+- **Fallback**: Use simpler encryption or none
 
 ---
 
-## Resource Requirements
+## Resource Requirements (Updated)
 
 ### Tools
 - ✅ Yosys (synthesis)
@@ -375,79 +543,88 @@ submissions/
 
 ### Documentation
 - ✅ UART specification (created)
+- ✅ AES-128 fundamentals (created)
+- ✅ FIFO & Flow Control docs (created)
 - ✅ TinyQV interface spec (from example)
 - ✅ Automation scripts (created)
 
 ### Team Skills Needed
-- Verilog/SystemVerilog
-- Digital design fundamentals
-- Testbench creation
-- LLM prompt engineering
-- Git workflow
+- ✅ Verilog/SystemVerilog
+- ✅ Digital design fundamentals
+- ✅ Testbench creation (Cocotb)
+- ✅ LLM prompt engineering
+- ✅ Git workflow
+- 🔄 Cryptography basics (AES)
+- 🔄 FIFO design patterns
 
 ---
 
-## Success Metrics
+## Success Metrics (Updated)
 
-### Technical Metrics
-- [ ] Synthesis: 0 errors, < 10 warnings
-- [ ] Timing: WNS ≥ 0 ns
-- [ ] Area: ≤ 0.03 mm²
-- [ ] Power: ≤ 10 µW
-- [ ] Tests: 100% pass rate
+### Technical Metrics - Phase 1 ✅
+- ✅ Synthesis: 0 errors, minimal warnings
+- ✅ Timing: WNS = 0 ns
+- ✅ Area: 0.018 mm²
+- ✅ Power: 0.0014 µW
+- ✅ Tests: 37/37 pass rate (100%)
+
+### Technical Metrics - Phase 2 (Target)
+- [ ] Synthesis: 0 errors, < 20 warnings
+- [ ] Timing: WNS ≥ 0 ns @ 70MHz
+- [ ] Area: ≤ 0.050 mm²
+- [ ] Power: ≤ 15 µW
+- [ ] Tests: 50+ tests, 100% pass rate
 
 ### Process Metrics
-- [ ] Daily commits
-- [ ] All prompts logged
-- [ ] Weekly progress reviews
-- [ ] Documentation updated continuously
+- ✅ Daily commits (Phase 1)
+- ✅ All prompts logged (Phase 1: 417KB)
+- [ ] Continuous documentation updates
+- [ ] Phase 2 prompt logs organized
 
 ### Deliverable Metrics
-- [ ] All required files present
-- [ ] Documentation complete
-- [ ] Code well-commented
-- [ ] Clean git history
-
----
-
-## Daily Schedule
-
-**Jan 19 (Today)**: Planning ✅
-**Jan 20**: Baud rate generator + testing
-**Jan 21**: TX module + testing
-**Jan 22**: RX module + testing
-**Jan 23**: Register interface + integration
-**Jan 24**: Full integration testing
-**Jan 25**: Synthesis optimization
-**Jan 26**: PPA analysis
-**Jan 27**: Documentation
-**Jan 28**: Final submission
+- ✅ Phase 1 files complete
+- [ ] Phase 2 implementation complete
+- [ ] Updated documentation
+- [ ] Clean git history with proper tags
 
 ---
 
 ## Team Communication
 
-**Daily Standup**: Quick sync on progress
-- What did I complete?
-- What am I working on today?
-- Any blockers?
+**Daily Progress**: Document completion
+- What modules completed today?
+- What tests passing?
+- Any blockers or issues?
 
-**LLM Interaction Log**: Track all prompts
-- Save full conversations
-- Note what worked/didn't work
-- Include iteration details
+**LLM Interaction Log**: Track all prompts (Phase 2)
+- Save full conversations for AES, FIFOs, Flow Control
+- Note AI suggestions and iterations
+- Include debugging sessions
 
-**Git Commits**: Clear messages
-- Use conventional commits
-- Reference issues/tasks
-- Keep commits atomic
+**Git Commits**: Clear, descriptive messages
+- Use conventional commits (feat:, fix:, docs:)
+- Reference phase and module
+- Keep commits atomic and meaningful
 
 ---
 
-## Next Immediate Steps
+## Next Immediate Steps (Jan 21, 1:00pm)
 
-1. **Review this plan** - Make sure you understand each phase
-2. **Study UART_FUNDAMENTALS.md** - Understand the protocol
+1. ✅ **Updated documentation** - AES fundamentals, FIFO/Flow Control docs
+2. ✅ **Reorganized docs** - uart/ and aes/ subdirectories
+3. 🔄 **Update READMEs** - Reflect Secure UART scope
+4. 🔄 **Start FIFO implementation** - TX FIFO first
+5. **Log LLM prompts** - Begin Phase 2 conversation logs
+
+---
+
+**Status**: Phase 1 Complete ✅ | Phase 2 Documentation Complete ✅ | Ready for Implementation 🚀  
+**Next Phase**: FIFO Buffers (Jan 21 afternoon)  
+**Timeline**: On track for Jan 28 deadline
+
+---
+
+*Last Updated: January 21, 2026 - 1:50pm GMT+1*
 3. **Review BLOCK_DIAGRAMS.md** - Understand the architecture
 4. **Start Phase 2** - Begin with baud rate generator
 5. **Log first LLM prompt** - Save the conversation!

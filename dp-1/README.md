@@ -1,6 +1,21 @@
-# AI-HDL Design Phase 1 (DP#1) - UART Peripheral
+# AI-HDL Design Phase 1 (DP#1) - Secure UART Peripheral
 
-Team implementation of a UART peripheral for the AI-HDL 2026 competition Design Phase 1.
+Team implementation of a **Secure UART peripheral** with FIFOs, flow control, and AES-128 encryption for the AI-HDL 2026 competition Design Phase 1.
+
+## Project Overview
+
+### Phase 1: Basic UART (Completed ✅)
+- **5 core modules**: baud_gen, uart_tx, uart_rx, register_interface, peripheral
+- **37/37 tests passing** across 8 test suites
+- **0.018 mm²** area, **0ns WNS**, **0.0014 µW** power
+- **Production-ready** with clean synthesis
+
+### Phase 2: Secure UART Enhancements (In Progress 🔄)
+- **FIFO Buffers**: 16-byte TX/RX with watermark detection
+- **Flow Control**: RTS/CTS hardware handshaking
+- **AES-128 Engine**: Iterative encryption (~24 cycles/block)
+- **Enhanced Interface**: 12 registers (6 UART + 6 security/FIFO)
+- **Target**: ≤0.050 mm², ≤15 µW, 0ns WNS @ 70MHz
 
 ## Quick Start
 

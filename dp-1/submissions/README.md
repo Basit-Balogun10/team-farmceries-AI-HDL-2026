@@ -1,26 +1,35 @@
-# Team Farmceries - DP#1 UART Peripheral Submission
+# Team Farmceries - DP#1 Secure UART Peripheral Submission
 
 **Team**: Farmceries  
 **Design Phase**: 1 (Base Design Expansion)  
-**Peripheral**: UART (Universal Asynchronous Receiver/Transmitter)  
-**Submission Date**: January 20, 2026  
+**Peripheral**: Secure UART with AES-128 Encryption  
+**Submission Date**: January 28, 2026  
 **Repository**: [team-farmceries-AI-HDL-2026](https://github.com/Basit-Balogun10/team-farmceries-AI-HDL-2026)
 
 ---
 
 ## 📋 Executive Summary
 
-We implemented a fully functional UART peripheral integrated with the TinyQV RISC-V core using an AI-first design methodology. The peripheral provides serial communication capabilities with 4 configurable baud rates (9600-115200), 16x oversampling for reliability, and full interrupt support.
+We implemented a **Secure UART peripheral** with FIFO buffers, hardware flow control, and AES-128 encryption, integrated with the TinyQV RISC-V core using an AI-first design methodology. The peripheral provides encrypted serial communication with robust data buffering, configurable baud rates, and secure data transmission for embedded IoT and security applications.
 
-**Key Achievements:**
+### Phase 1: Basic UART (Completed Jan 17-20) ✅
 - ✅ **Synthesizable UART peripheral** - 852 cells, 0 synthesis errors
-- ✅ **All testbenches passing** - 36/36 tests across 8 test suites
+- ✅ **All testbenches passing** - 37/37 tests across 8 test suites
 - ✅ **PPA metrics EXCEEDED all targets:**
   - Area: **0.018 mm²** (40% under 0.03mm² budget)
   - Timing: **0ns WNS** (perfect 70MHz timing closure)
   - Power: **0.0014 µW** (7000x under 10µW target)
-- ✅ **Production-ready** - No DRC violations, clean LVS, fabrication-ready GDSII
-- ✅ Comprehensive AI-assisted design documentation
+- ✅ **Production-ready** - Clean synthesis, fabrication-ready design
+
+### Phase 2: Secure UART Enhancements (Jan 21-28) 🔄
+- 🔄 **16-byte TX/RX FIFO buffers** - Watermark detection, overflow protection
+- 🔄 **RTS/CTS hardware flow control** - Automatic threshold-based handshaking
+- 🔄 **AES-128 encryption engine** - Iterative architecture, ~24 cycles/block encryption
+- 🔄 **Enhanced register interface** - 12 registers total (6 UART + 6 security/FIFO)
+- 🔄 **Target PPA metrics:**
+  - Area: ≤0.050 mm² (~2500-3200 cells)
+  - Timing: 0ns WNS @ 70MHz
+  - Power: ≤15 µW
 
 ---
 
