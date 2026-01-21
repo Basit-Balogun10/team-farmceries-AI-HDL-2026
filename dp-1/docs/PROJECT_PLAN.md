@@ -156,11 +156,6 @@ Design and implement a production-grade secure UART (Universal Asynchronous Rece
 - [ ] Update register interface for FIFO status
 - [ ] Create FIFO testbenches
 
-**LLM Prompts to Use:**
-- "Design a 16-byte FIFO buffer with read/write pointers and status flags"
-- "Implement watermark detection for UART FIFO to trigger interrupts"
-- "Create testbench for FIFO overflow and underflow conditions"
-
 **Verification:**
 - Test FIFO full/empty conditions
 - Verify watermark interrupts
@@ -180,11 +175,6 @@ Design and implement a production-grade secure UART (Universal Asynchronous Rece
 - [ ] Add flow control configuration registers
 - [ ] Update UART TX FSM for CTS checking
 - [ ] Create flow control testbenches
-
-**LLM Prompts to Use:**
-- "Implement RTS/CTS hardware flow control for UART"
-- "Design flow control logic that pauses TX when CTS is asserted"
-- "Create testbench simulating backpressure with RTS/CTS handshaking"
 
 **Verification:**
 - Test RTS assertion when RX FIFO nearly full
@@ -210,12 +200,6 @@ Design and implement a production-grade secure UART (Universal Asynchronous Rece
 - [ ] Implement AddRoundKey (XOR operation)
 - [ ] Create component testbenches
 
-**LLM Prompts to Use:**
-- "Implement AES-128 S-Box lookup table in Verilog"
-- "Design ShiftRows transformation for AES state matrix"
-- "Implement MixColumns with Galois field multiplication in GF(2^8)"
-- "Create testbenches for individual AES transformations with known test vectors"
-
 **Verification:**
 - Test S-Box with NIST test vectors
 - Verify ShiftRows byte positions
@@ -230,11 +214,6 @@ Design and implement a production-grade secure UART (Universal Asynchronous Rece
 - [ ] Implement encryption/decryption modes
 - [ ] Create round function testbenches
 
-**LLM Prompts to Use:**
-- "Implement AES-128 key expansion algorithm with round constants"
-- "Design AES encryption round function FSM (10 rounds)"
-- "Create testbench for AES encryption with NIST FIPS 197 test vectors"
-
 **Verification:**
 - Test key expansion with known keys
 - Verify 10-round encryption
@@ -248,11 +227,6 @@ Design and implement a production-grade secure UART (Universal Asynchronous Rece
 - [ ] Implement AES key storage (128-bit)
 - [ ] Add encryption/decryption control
 - [ ] Comprehensive AES testing
-
-**LLM Prompts to Use:**
-- "Integrate AES-128 components into top-level encryption engine"
-- "Design register interface for AES key loading and control"
-- "Create comprehensive testbench for full AES-128 encryption/decryption"
 
 **Verification:**
 - Full encryption/decryption cycle
@@ -270,11 +244,6 @@ Design and implement a production-grade secure UART (Universal Asynchronous Rece
 - [ ] Update peripheral top-level module
 - [ ] Add AES registers to memory map
 - [ ] Create end-to-end secure communication tests
-
-**LLM Prompts to Use:**
-- "Integrate AES encryption engine with UART TX data path"
-- "Design control logic to trigger AES encryption when TX FIFO has 16 bytes"
-- "Create testbench for secure UART: encrypt→transmit→receive→decrypt"
 
 **Verification:**
 - Test plaintext → encrypt → transmit flow
@@ -381,11 +350,6 @@ Design and implement a production-grade secure UART (Universal Asynchronous Rece
 - [ ] Test loopback mode (TX → RX)
 - [ ] Test with TinyQV CPU interface
 - [ ] Run cocotb tests
-
-**LLM Prompts to Use:**
-- "Integrate UART TX, RX, and registers into top-level module"
-- "Create comprehensive cocotb testbench for UART peripheral"
-- "Design loopback test that verifies UART TX to RX communication"
 
 **Test Scenarios:**
 1. Basic loopback (connect TX to RX)
