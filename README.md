@@ -6,9 +6,7 @@ Building real silicon using AI assistants. This repository documents our journey
 
 A complete UART (serial communication) peripheral that connects to a tiny RISC-V processor. Think of it as the chip's "talking module" - it lets the processor send and receive data one bit at a time over a wire.
 
-**The Challenge**: Design working hardware that fits on a 2mm × 2mm silicon chip, meets timing and power requirements, and actually does something useful.
-
-**Our Solution**: A minimalist UART design with just the essentials - transmitter, receiver, baud rate control, and CPU interface. No extra fluff, just what works.
+We implemented a minimalist design with just the essentials - transmitter, receiver, baud rate control, and CPU interface. No extra fluff, just what works.
 
 ## The Journey
 
