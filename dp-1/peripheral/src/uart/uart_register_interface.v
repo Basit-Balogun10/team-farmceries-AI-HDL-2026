@@ -36,6 +36,7 @@ module uart_register_interface (
     input  wire [7:0]  rx_data,
     input  wire        rx_ready,
     input  wire        rx_error,
+    output reg         rx_data_read,  // Pulse when CPU reads RX_DATA
     
     // Baud rate selection
     output wire [3:0]  baud_sel,
@@ -79,6 +80,7 @@ module uart_register_interface (
     
     // Write logic + interrupt management (combined to avoid multiple drivers)
     wire write_en = (data_write_n != 2'b11);
+    wire read_en = (data_read_n != 2'b11);
     reg tx_busy_prev;  // Track tx_busy edge for interrupt generation
     
     always @(posedge clk or negedge rst_n) begin
@@ -91,9 +93,11 @@ module uart_register_interface (
             int_status_reg <= 2'b00;
             tx_busy_prev   <= 1'b0;
             flow_ctrl_reg  <= 1'b0;   // Flow control disabled by default
+            rx_data_read   <= 1'b0;
         end else begin
-            // Default: clear tx_start pulse after 1 cycle
+            // Default: clear single-cycle pulses
             tx_start <= 1'b0;
+            rx_data_read <= 1'b0;
             
             // Track tx_busy for edge detection
             tx_busy_prev <= tx_busy;
@@ -140,6 +144,11 @@ module uart_register_interface (
                         // Ignore writes to undefined addresses
                     end
                 endcase
+            end
+            
+            // Handle CPU reads - generate rx_data_read pulse
+            if (read_en && address == ADDR_RX_DATA) begin
+                rx_data_read <= 1'b1;  // Pulse for 1 cycle
             end
         end
     end

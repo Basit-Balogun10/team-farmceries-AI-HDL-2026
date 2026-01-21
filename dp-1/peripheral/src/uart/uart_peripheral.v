@@ -35,6 +35,7 @@ module uart_peripheral (
     // Internal signals
     wire [3:0] baud_sel;
     wire       baud_tick;
+    wire       flow_ctrl_en;  // Not used in basic peripheral
     
     // TX signals
     wire [7:0] tx_data;
@@ -45,6 +46,7 @@ module uart_peripheral (
     wire [7:0] rx_data;
     wire       rx_ready;
     wire       rx_error;
+    wire       rx_data_read;  // Not used in basic peripheral (no FIFO)
     
     // Instantiate baud rate generator
     uart_baud_generator baud_gen (
@@ -99,9 +101,11 @@ module uart_peripheral (
         .rx_data(rx_data),
         .rx_ready(rx_ready),
         .rx_error(rx_error),
+        .rx_data_read(rx_data_read),  // Output (unused in basic peripheral)
         
         // Configuration
         .baud_sel(baud_sel),
+        .flow_ctrl_en(flow_ctrl_en),  // Output (unused in basic peripheral)
         
         // Interrupt
         .uart_interrupt(uart_interrupt)
