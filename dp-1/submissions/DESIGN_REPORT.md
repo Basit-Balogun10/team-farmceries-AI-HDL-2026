@@ -778,64 +778,62 @@ async def test_nist_vector(dut):
 
 ## 12. Synthesis Results
 
-### Metrics (Phase 2: Secure UART)
+### Metrics (Phase 2: Full System - TinyQV CPU + Secure UART)
 
-**Command**: `yosys -s synth_secure_uart.ys` (see `scripts/synth_secure_uart.sh`)
+**Command**: `bash scripts/run_synthesis.sh` (synthesizes full tt_wrapper)
 
 ```
-=== secure_uart_peripheral ===
+=== tt_um_tqv_peripheral_harness ===
+(Full system: TinyQV RISC-V CPU + Secure UART with AES-128)
 
-Total Cells:        53,221
-├─ Flip-Flops:       9,822  (18.5%)
-│  ├─ $_DFFE_PN0P_:  6,891  (D flip-flop, posedge clk, negedge rst, enable)
-│  ├─ $_DFFE_PP_:    2,824  (D flip-flop, posedge clk, posedge rst, enable)
-│  ├─ $_DFF_PN0_:       97  (D flip-flop, posedge clk, negedge rst)
-│  ├─ $_DFF_PN1_:        9  (D flip-flop, posedge clk, negedge rst, preset)
-│  └─ $_DFF_P_:          1  (D flip-flop, posedge clk)
-├─ Multiplexers:    18,519  (34.8%)
-└─ Logic Gates:     24,792  (46.6%)
-   ├─ $_ANDNOT_:    10,625  (AND-NOT gate)
-   ├─ $_AND_:          746  (AND gate)
-   ├─ $_OR_:         7,317  (OR gate)
-   ├─ $_XOR_:        1,880  (XOR gate)
-   ├─ $_XNOR_:       1,008  (XNOR gate)
-   ├─ $_NOT_:        1,476  (Inverter)
-   ├─ $_NOR_:          834  (NOR gate)
-   ├─ $_NAND_:         160  (NAND gate)
-   └─ $_ORNOT_:        746  (OR-NOT gate)
+Total Cells:       124,778
+├─ Flip-Flops:      30,331  (24.3%)
+├─ Combinational:   94,447  (75.7%)
+   ├─ Logic gates
+   ├─ Multiplexers  
+   └─ Arithmetic units
 
-Wire Count:         43,008 wires (85,147 wire bits)
+** Note: This includes the complete system **
+- TinyQV RISC-V CPU core (~70,000 cells estimated)
+- Secure UART peripheral (~54,000 cells estimated)
+  - Basic UART (Phase 1): ~850 cells
+  - AES-128 encryption: ~53,000 cells
 ```
 
 ### Comparison: Phase 1 vs Phase 2
 
-| Metric | Phase 1 (UART Only) | Phase 2 (Secure UART) | Growth |
-|--------|---------------------|----------------------|--------|
-| **Total Cells** | 852 | 53,221 | **62× larger** |
-| **Flip-Flops** | ~300 | 9,822 | **33× more state** |
-| **Multiplexers** | ~200 | 18,519 | **93× more routing** |
-| **Logic Gates** | ~350 | 24,792 | **71× more logic** |
-| **Wires** | ~600 | 43,008 | **72× more nets** |
+| Metric | Phase 1 (CPU + Basic UART) | Phase 2 (CPU + Secure UART) | Growth |
+|--------|----------------------------|----------------------------|--------|
+| **Total Cells** | ~70,850 (estimated) | 124,778 | **76% larger** |
+| **Flip-Flops** | ~20,500 (estimated) | 30,331 | **48% increase** |
+| **UART Cells** | 852 | ~54,000 | **63× larger** |
 
-**Analysis**: AES encryption added ~62× more hardware, dominated by:
+**Phase 2 UART Enhancement Breakdown:**
+- Basic UART (Phase 1): 852 cells
+- AES-128 addition: ~53,000 cells (S-boxes, mix columns, key expansion)
+- Growth factor: **63× larger peripheral**
+
+**Analysis**: AES encryption added ~63× more hardware to the UART peripheral:
 - S-Box lookup tables (256×8 bits × 2 for forward/inverse)
 - Mix Columns Galois field multipliers
 - Key expansion logic (11 round keys)
 - Dual AES cores (independent TX/RX)
 
-**Performance**: Despite 62× size increase, AES overhead is **0.01%** because UART is the bottleneck:
+**Performance**: Despite 63× peripheral size increase, AES overhead is **0.01%** because UART is the bottleneck:
 - UART @ 115200 bps: 86.8 μs per byte
 - AES @ 70 MHz: 157 ns per 16-byte block = **9.8 ns per byte**
 - **AES is 8800× faster than UART!**
 
 ### Area Estimation
 
-Using Sky130 PDK standard cell library estimates:
-- **Phase 1**: 0.018 mm² (measured via OpenLANE)
-- **Phase 2 (projected)**: 0.018 + (62 × 0.018 × 0.3) ≈ **0.35 mm²**
-  - Scaling factor 0.3 accounts for reduced routing complexity in AES (more regular structure than UART)
+Using Sky130 PDK standard cell library:
+- **Phase 1 (CPU + Basic UART)**: 0.018 mm² (UART only, measured via OpenLANE)
+  - Estimated full system: ~0.150 mm²
+- **Phase 2 (CPU + Secure UART)**: Pending OpenLANE PPA analysis
+  - Synthesis shows 124,778 cells (vs Phase 1's ~70,850 estimated)
+  - Expected range: **0.22-0.30 mm²**
 
-**Note**: Full place-and-route with OpenLANE will provide accurate area in final submission.
+**Note**: Full place-and-route with OpenLANE is required for accurate area metrics.
 
 ---
 

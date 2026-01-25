@@ -24,15 +24,17 @@ This document presents the Power, Performance, and Area (PPA) analysis of our UA
 
 ### Phase 2: Secure UART with AES-128
 
-**Key Metrics**:
+**Synthesis Results** (Full tt_wrapper with TinyQV CPU):
 
--   **Total Cells**: 53,221 (62× larger than Phase 1)
--   **Flip-Flops**: 9,822 (state registers for AES rounds)
--   **Multiplexers**: 18,519 (data routing in encryption pipeline)
--   **Logic Gates**: 24,792 (S-box lookups, Galois field math)
+-   **Total Cells**: 124,778 (full system: CPU + Secure UART)
+-   **Flip-Flops**: 30,331 (includes CPU registers + AES state)
+-   **UART Enhancement**: Basic UART (852 cells) → Secure UART (~54,000 cells)
+-   **AES Growth**: 63× larger peripheral due to encryption hardware
 -   **Performance**: AES overhead = 0.01% (encryption 8800× faster than UART!)
 
-**Verdict**: **Successful integration** - Transparent hardware encryption with minimal performance impact!
+**Status**: Synthesis complete ✅ | **PPA analysis pending** (requires OpenLANE)
+
+**Next**: Run `./scripts/run_synthesis_and_ppa.sh ~vlsi/tools/OpenLane` for full metrics
 
 ---
 

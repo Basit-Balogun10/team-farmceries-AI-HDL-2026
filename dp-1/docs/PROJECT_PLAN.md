@@ -20,10 +20,10 @@ Design and implement a production-grade secure UART (Universal Asynchronous Rece
 3. ✅ Passing testbenches (functional verification) - **Phase 1: 37/37 tests passing**
 4. ✅ Complete PPA analysis (OpenLANE) - **Phase 1: 0.018mm², 0ns WNS**
 5. ✅ Full documentation with LLM prompt logs - **Phase 1 Complete**
-6. 🔄 TX/RX FIFOs (16 bytes each) - **Phase 2 In Progress**
-7. 🔄 Hardware flow control (RTS/CTS) - **Phase 2 In Progress**
-8. 🔄 AES-128 encryption engine - **Phase 2 In Progress**
-9. 🔄 Secure communication integration - **Phase 2 In Progress**
+6. ❌ TX/RX FIFOs (16 bytes each) - **Phase 2: Descoped** (prioritized AES)
+7. ❌ Hardware flow control (RTS/CTS) - **Phase 2: Descoped** (prioritized AES)
+8. ✅ AES-128 encryption engine - **Phase 2 COMPLETE** (18/18 tests, 124K cells)
+9. ✅ Secure communication integration - **Phase 2 COMPLETE** (full tt_wrapper synthesis)
 
 ---
 
