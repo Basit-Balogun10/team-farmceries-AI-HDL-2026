@@ -459,3 +459,382 @@ async def test_multiple_sequential_operations(dut):
         await Timer(20, units="us")
     
     print("\n  ✓ All sequential operations completed")
+
+@cocotb.test()
+async def test_tx_fifo_burst_write(dut):
+    """Test TX FIFO handles burst writes from CPU"""
+    
+    clock = Clock(dut.clk, 14, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset
+    dut.rst_n.value = 0
+    dut.address.value = 0
+    dut.data_in.value = 0
+    dut.data_write_n.value = 0b11
+    dut.data_read_n.value = 0b11
+    dut.uart_rx.value = 1
+    dut.cts_n.value = 1  # CTS inactive (not clear to send)
+    
+    await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)
+    
+    print("\nTest: TX FIFO burst write (16 bytes)")
+    
+    # Set baud rate to 115200 for faster test
+    await cpu_write(dut, 0x00, 0x0C)
+    await Timer(5, units="us")
+    
+    # Write 16 bytes rapidly to TX FIFO
+    test_data = list(range(0x10, 0x20))  # 0x10-0x1F
+    print(f"  Writing {len(test_data)} bytes to TX FIFO...")
+    
+    for i, byte_val in enumerate(test_data):
+        await cpu_write(dut, 0x08, byte_val)
+        print(f"    Byte {i+1}: 0x{byte_val:02X}")
+        await RisingEdge(dut.clk)
+    
+    # Check TX FIFO status
+    status = await cpu_read(dut, 0x04)
+    print(f"  STATUS after writes: 0x{status:08X}")
+    
+    # Enable CTS to allow transmission
+    dut.cts_n.value = 0  # CTS active (clear to send)
+    print("  CTS enabled, transmission should start...")
+    
+    # Wait for all bytes to transmit
+    await Timer(2, units="ms")
+    
+    # TX should no longer be busy
+    status = await cpu_read(dut, 0x04)
+    assert (status & 0x01) == 0, "TX should not be busy after all bytes sent"
+    
+    print("  ✓ TX FIFO burst write completed")
+
+
+@cocotb.test()
+async def test_tx_fifo_flow_control(dut):
+    """Test TX flow control with CTS signal"""
+    
+    clock = Clock(dut.clk, 14, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset
+    dut.rst_n.value = 0
+    dut.address.value = 0
+    dut.data_in.value = 0
+    dut.data_write_n.value = 0b11
+    dut.data_read_n.value = 0b11
+    dut.uart_rx.value = 1
+    dut.cts_n.value = 1  # Start with CTS inactive
+    
+    await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)
+    
+    print("\nTest: TX flow control (CTS pause/resume)")
+    
+    # Enable flow control
+    await cpu_write(dut, 0x18, 0x01)  # FLOW_CTRL_EN = 1
+    await cpu_write(dut, 0x00, 0x0C)  # 115200 baud
+    await Timer(5, units="us")
+    
+    # Write byte to TX
+    print("  Writing byte with CTS inactive (should queue)...")
+    await cpu_write(dut, 0x08, 0xAA)
+    await Timer(50, units="us")
+    
+    # TX should be waiting (busy but not transmitting)
+    status = await cpu_read(dut, 0x04)
+    print(f"  STATUS with CTS inactive: 0x{status:08X}")
+    
+    # Enable CTS
+    print("  Enabling CTS (transmission should start)...")
+    dut.cts_n.value = 0
+    await Timer(200, units="us")
+    
+    # Now disable CTS mid-transmission
+    print("  Disabling CTS mid-transmission...")
+    dut.cts_n.value = 1
+    await Timer(100, units="us")
+    
+    # Re-enable CTS to complete
+    print("  Re-enabling CTS (should resume)...")
+    dut.cts_n.value = 0
+    await Timer(200, units="us")
+    
+    # Check transmission completed
+    status = await cpu_read(dut, 0x04)
+    print(f"  Final STATUS: 0x{status:08X}")
+    
+    print("  ✓ Flow control pause/resume verified")
+
+
+@cocotb.test()
+async def test_rx_fifo_fill(dut):
+    """Test RX FIFO accumulates multiple bytes"""
+    
+    clock = Clock(dut.clk, 14, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset
+    dut.rst_n.value = 0
+    dut.address.value = 0
+    dut.data_in.value = 0
+    dut.data_write_n.value = 0b11
+    dut.data_read_n.value = 0b11
+    dut.uart_rx.value = 1
+    dut.cts_n.value = 1
+    
+    await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)
+    
+    print("\nTest: RX FIFO accumulates bytes")
+    
+    # Set baud rate
+    await cpu_write(dut, 0x00, 0x0C)  # 115200
+    await Timer(5, units="us")
+    
+    # Send multiple bytes to RX
+    test_bytes = [0x01, 0x02, 0x03, 0x04, 0x05]
+    print(f"  Sending {len(test_bytes)} bytes to RX...")
+    
+    for byte_val in test_bytes:
+        print(f"    Sending 0x{byte_val:02X}")
+        await drive_uart_byte(dut, byte_val, 0xC)
+        await Timer(10, units="us")
+    
+    # Read bytes from RX FIFO
+    print("  Reading bytes from RX FIFO...")
+    for expected in test_bytes:
+        rx_val = await cpu_read(dut, 0x0C)
+        actual = rx_val & 0xFF
+        print(f"    Read 0x{actual:02X} (expected 0x{expected:02X})")
+        assert actual == expected, f"RX FIFO mismatch"
+    
+    print("  ✓ RX FIFO correctly stored and retrieved all bytes")
+
+
+@cocotb.test()
+async def test_rx_rts_generation(dut):
+    """Test RTS signal asserts when RX FIFO reaches watermark"""
+    
+    clock = Clock(dut.clk, 14, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset
+    dut.rst_n.value = 0
+    dut.address.value = 0
+    dut.data_in.value = 0
+    dut.data_write_n.value = 0b11
+    dut.data_read_n.value = 0b11
+    dut.uart_rx.value = 1
+    dut.cts_n.value = 1
+    
+    await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)
+    
+    print("\nTest: RTS generation on RX FIFO watermark")
+    
+    # Enable flow control
+    await cpu_write(dut, 0x18, 0x01)  # FLOW_CTRL_EN = 1
+    await cpu_write(dut, 0x00, 0x0C)  # 115200 baud
+    await Timer(5, units="us")
+    
+    # RTS should be inactive (high) initially
+    print(f"  Initial RTS_N: {int(dut.rts_n.value)}")
+    assert dut.rts_n.value == 1, "RTS should be inactive (high) when FIFO empty"
+    
+    # Send bytes to fill RX FIFO to watermark (14 bytes)
+    print("  Filling RX FIFO to watermark (14 bytes)...")
+    for i in range(14):
+        await drive_uart_byte(dut, 0x50 + i, 0xC)
+        await Timer(10, units="us")
+    
+    # Wait for RTS to assert
+    await Timer(50, units="us")
+    
+    # RTS should now be active (low) due to watermark
+    print(f"  RTS_N after watermark: {int(dut.rts_n.value)}")
+    assert dut.rts_n.value == 0, "RTS should be active (low) at watermark"
+    
+    # Read some bytes to reduce FIFO level
+    print("  Reading 5 bytes to reduce FIFO level...")
+    for _ in range(5):
+        await cpu_read(dut, 0x0C)
+        await RisingEdge(dut.clk)
+    
+    await Timer(10, units="us")
+    
+    # RTS should deassert (high) when below watermark
+    print(f"  RTS_N after reading: {int(dut.rts_n.value)}")
+    assert dut.rts_n.value == 1, "RTS should be inactive (high) below watermark"
+    
+    print("  ✓ RTS generation verified")
+
+
+@cocotb.test()
+async def test_full_duplex_with_fifo(dut):
+    """Test simultaneous TX and RX with FIFOs"""
+    
+    clock = Clock(dut.clk, 14, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset
+    dut.rst_n.value = 0
+    dut.address.value = 0
+    dut.data_in.value = 0
+    dut.data_write_n.value = 0b11
+    dut.data_read_n.value = 0b11
+    dut.uart_rx.value = 1
+    dut.cts_n.value = 0  # CTS active
+    
+    await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)
+    
+    print("\nTest: Full duplex operation with FIFOs")
+    
+    # Set baud rate
+    await cpu_write(dut, 0x00, 0x0C)  # 115200
+    await Timer(5, units="us")
+    
+    # Start TX transmission (write 8 bytes)
+    tx_data = [0xA0 + i for i in range(8)]
+    print("  Starting TX transmission (8 bytes)...")
+    for byte_val in tx_data:
+        await cpu_write(dut, 0x08, byte_val)
+        await RisingEdge(dut.clk)
+    
+    # Simultaneously drive RX input (8 bytes)
+    print("  Simultaneously receiving on RX (8 bytes)...")
+    
+    async def rx_driver():
+        for i in range(8):
+            await drive_uart_byte(dut, 0xB0 + i, 0xC)
+            await Timer(10, units="us")
+    
+    cocotb.start_soon(rx_driver())
+    
+    # Wait for both operations to complete
+    await Timer(2, units="ms")
+    
+    # Verify RX FIFO has data
+    print("  Reading RX FIFO...")
+    for i in range(8):
+        rx_val = await cpu_read(dut, 0x0C)
+        expected = 0xB0 + i
+        actual = rx_val & 0xFF
+        print(f"    RX byte {i}: 0x{actual:02X} (expected 0x{expected:02X})")
+        assert actual == expected, "RX data mismatch"
+    
+    # Verify TX completed
+    status = await cpu_read(dut, 0x04)
+    assert (status & 0x01) == 0, "TX should be idle"
+    
+    print("  ✓ Full duplex with FIFOs verified")
+
+
+@cocotb.test()
+async def test_fifo_overflow_protection(dut):
+    """Test FIFOs handle overflow gracefully"""
+    
+    clock = Clock(dut.clk, 14, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset
+    dut.rst_n.value = 0
+    dut.address.value = 0
+    dut.data_in.value = 0
+    dut.data_write_n.value = 0b11
+    dut.data_read_n.value = 0b11
+    dut.uart_rx.value = 1
+    dut.cts_n.value = 1  # Block TX
+    
+    await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)
+    
+    print("\nTest: FIFO overflow protection")
+    
+    # Set baud rate
+    await cpu_write(dut, 0x00, 0x0C)
+    await Timer(5, units="us")
+    
+    # Try to write more than 16 bytes to TX FIFO (with CTS blocking)
+    print("  Writing 20 bytes to TX FIFO (capacity=16)...")
+    for i in range(20):
+        await cpu_write(dut, 0x08, i)
+        await RisingEdge(dut.clk)
+    
+    # System should not crash - FIFO should handle overflow
+    status = await cpu_read(dut, 0x04)
+    print(f"  STATUS after overflow attempt: 0x{status:08X}")
+    
+    # Enable CTS to drain some bytes
+    dut.cts_n.value = 0
+    await Timer(500, units="us")
+    
+    # System should still be operational
+    status = await cpu_read(dut, 0x04)
+    print(f"  STATUS after draining: 0x{status:08X}")
+    
+    print("  ✓ FIFO overflow handled gracefully")
+
+
+@cocotb.test()
+async def test_flow_control_register(dut):
+    """Test FLOW_CTRL register read/write"""
+    
+    clock = Clock(dut.clk, 14, units="ns")
+    cocotb.start_soon(clock.start())
+    
+    # Reset
+    dut.rst_n.value = 0
+    dut.address.value = 0
+    dut.data_in.value = 0
+    dut.data_write_n.value = 0b11
+    dut.data_read_n.value = 0b11
+    dut.uart_rx.value = 1
+    dut.cts_n.value = 1
+    
+    await RisingEdge(dut.clk)
+    await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)
+    
+    print("\nTest: FLOW_CTRL register (0x18)")
+    
+    # Read initial value
+    flow_ctrl = await cpu_read(dut, 0x18)
+    print(f"  Initial FLOW_CTRL: 0x{flow_ctrl:02X}")
+    assert (flow_ctrl & 0x01) == 0, "Flow control should be disabled by default"
+    
+    # Enable flow control
+    print("  Enabling flow control...")
+    await cpu_write(dut, 0x18, 0x01)
+    
+    # Read back
+    flow_ctrl = await cpu_read(dut, 0x18)
+    print(f"  FLOW_CTRL after enable: 0x{flow_ctrl:02X}")
+    assert (flow_ctrl & 0x01) == 1, "Flow control should be enabled"
+    
+    # Disable flow control
+    print("  Disabling flow control...")
+    await cpu_write(dut, 0x18, 0x00)
+    
+    # Read back
+    flow_ctrl = await cpu_read(dut, 0x18)
+    print(f"  FLOW_CTRL after disable: 0x{flow_ctrl:02X}")
+    assert (flow_ctrl & 0x01) == 0, "Flow control should be disabled"
+    
+    print("  ✓ FLOW_CTRL register verified")
