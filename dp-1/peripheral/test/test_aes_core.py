@@ -4,7 +4,7 @@ Tests complete 10-round AES-128 encryption with NIST test vectors
 """
 
 import cocotb
-from cocotb.triggers import Timer, RisingEdge, FallenEdge
+from cocotb.triggers import Timer, RisingEdge
 from cocotb.clock import Clock
 
 # NIST FIPS-197 Appendix C Test Vectors
