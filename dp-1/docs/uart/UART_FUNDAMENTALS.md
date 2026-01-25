@@ -13,15 +13,17 @@
 ### The Simple Analogy: A Telephone Conversation
 
 Think of UART like two people having a phone conversation:
-- **Serial communication** = Speaking one word at a time (not shouting many words simultaneously)
-- **TX (Transmit)** = Your mouth speaking into the phone
-- **RX (Receive)** = Your ear listening to the phone
-- **Full-Duplex** = Both people can talk and listen at the same time (modern phones)
-- **Baud Rate** = How fast you speak (words per minute)
+
+-   **Serial communication** = Speaking one word at a time (not shouting many words simultaneously)
+-   **TX (Transmit)** = Your mouth speaking into the phone
+-   **RX (Receive)** = Your ear listening to the phone
+-   **Full-Duplex** = Both people can talk and listen at the same time (modern phones)
+-   **Baud Rate** = How fast you speak (words per minute)
 
 Just like phones need to be connected correctly (mouthpiece to earpiece), UART connects:
-- Device A's TX → Device B's RX
-- Device A's RX → Device B's TX
+
+-   Device A's TX → Device B's RX
+-   Device A's RX → Device B's TX
 
 ### Key Characteristics
 
@@ -35,29 +37,24 @@ Just like phones need to be connected correctly (mouthpiece to earpiece), UART c
 **You use UART every day!** Here are common examples:
 
 1. **GPS Navigation** 🛰️
-   - Your car's GPS module sends location data via UART to the dashboard display
-   - Baud rate: Usually 9600 bps
-   
+    - Your car's GPS module sends location data via UART to the dashboard display
+    - Baud rate: Usually 9600 bps
 2. **Bluetooth Headphones** 🎧
-   - Bluetooth chips communicate with microcontrollers via UART
-   - The music commands flow through UART internally
-   
+    - Bluetooth chips communicate with microcontrollers via UART
+    - The music commands flow through UART internally
 3. **Arduino Projects** 🤖
-   - Arduino Serial Monitor uses UART over USB
-   - "Serial.println()" sends data via UART
-   - Common for debugging: "Hello World" printing
-   
+    - Arduino Serial Monitor uses UART over USB
+    - "Serial.println()" sends data via UART
+    - Common for debugging: "Hello World" printing
 4. **Point-of-Sale Terminals** 💳
-   - Credit card readers communicate via UART
-   - Barcode scanners send data to registers via UART
-   
+    - Credit card readers communicate via UART
+    - Barcode scanners send data to registers via UART
 5. **Industrial Sensors** 🏭
-   - Temperature sensors, pressure sensors send readings via UART
-   - Simple, reliable, works over moderate distances
-   
+    - Temperature sensors, pressure sensors send readings via UART
+    - Simple, reliable, works over moderate distances
 6. **Computer Mice (older models)** 🖱️
-   - Serial port mice used UART
-   - Modern USB mice emulate UART internally
+    - Serial port mice used UART
+    - Modern USB mice emulate UART internally
 
 ---
 
@@ -68,30 +65,28 @@ Just like phones need to be connected correctly (mouthpiece to earpiece), UART c
 Imagine different ways to communicate orders in a restaurant:
 
 1. **UART (Serial)** = A waiter taking orders one table at a time
-   - Simple, reliable, but takes more time for many orders
-   - Only needs one waiter (one wire)
-   
+    - Simple, reliable, but takes more time for many orders
+    - Only needs one waiter (one wire)
 2. **Parallel Communication** = Multiple waiters taking orders simultaneously
-   - Faster for large batches
-   - Needs many waiters (many wires), expensive!
-   
+    - Faster for large batches
+    - Needs many waiters (many wires), expensive!
 3. **SPI** = A manager coordinating multiple waiters with a whistle (clock signal)
-   - Very organized, very fast
-   - Needs coordination signal (clock wire)
-   
+    - Very organized, very fast
+    - Needs coordination signal (clock wire)
 4. **I2C** = Shared walkie-talkie system (shared bus)
-   - Many devices on same channel
-   - Can get crowded (slower)
+    - Many devices on same channel
+    - Can get crowded (slower)
 
 **UART wins when**: You need simple, reliable, point-to-point communication without extra wires!
 
 ### Advantages
-- **Simple hardware** - Easy to implement (no complex protocols)
-- **Widely supported** - Nearly every chip has UART built-in
-- **Low pin count** - Only 2 signal wires needed (cheap!)
-- **Flexible** - Configurable baud rate and data format
-- **Long distance** - Works over several meters (with proper drivers)
-- **No clock signal needed** - Saves a wire!
+
+-   **Simple hardware** - Easy to implement (no complex protocols)
+-   **Widely supported** - Nearly every chip has UART built-in
+-   **Low pin count** - Only 2 signal wires needed (cheap!)
+-   **Flexible** - Configurable baud rate and data format
+-   **Long distance** - Works over several meters (with proper drivers)
+-   **No clock signal needed** - Saves a wire!
 
 ---
 
@@ -113,9 +108,10 @@ Device A              Device B
 **Important**: TX (transmit) of one device connects to RX (receive) of the other!
 
 ### Signal Levels
-- **Idle state**: Logic HIGH (1)
-- **Active transmission**: Starts with Logic LOW (0)
-- Voltage levels: Typically 3.3V or 5V (TTL levels)
+
+-   **Idle state**: Logic HIGH (1)
+-   **Active transmission**: Starts with Logic LOW (0)
+-   Voltage levels: Typically 3.3V or 5V (TTL levels)
 
 ---
 
@@ -137,30 +133,34 @@ transmission
 ### Frame Components
 
 1. **IDLE** (High state)
-   - Default state when not transmitting
-   - Line stays HIGH
+
+    - Default state when not transmitting
+    - Line stays HIGH
 
 2. **START BIT** (Always 0)
-   - Signals beginning of a frame
-   - Line goes from HIGH → LOW
-   - Receiver detects this transition and starts reading
+
+    - Signals beginning of a frame
+    - Line goes from HIGH → LOW
+    - Receiver detects this transition and starts reading
 
 3. **DATA BITS** (5-9 bits, usually 8)
-   - The actual data being sent
-   - Sent LSB (Least Significant Bit) first
-   - Example: To send 0xA5 (10100101):
-     - Bit order: 1, 0, 1, 0, 0, 1, 0, 1
+
+    - The actual data being sent
+    - Sent LSB (Least Significant Bit) first
+    - Example: To send 0xA5 (10100101):
+        - Bit order: 1, 0, 1, 0, 0, 1, 0, 1
 
 4. **PARITY BIT** (Optional)
-   - Error checking bit
-   - **Even parity**: Makes total number of 1s even
-   - **Odd parity**: Makes total number of 1s odd
-   - **No parity**: Skip this bit (most common)
+
+    - Error checking bit
+    - **Even parity**: Makes total number of 1s even
+    - **Odd parity**: Makes total number of 1s odd
+    - **No parity**: Skip this bit (most common)
 
 5. **STOP BIT(S)** (1, 1.5, or 2 bits of HIGH)
-   - Signals end of frame
-   - Line returns to HIGH
-   - Allows receiver time to process
+    - Signals end of frame
+    - Line returns to HIGH
+    - Allows receiver time to process
 
 ---
 
@@ -171,30 +171,35 @@ transmission
 ### The Highway Analogy 🚗
 
 Think of baud rate like speed limits on a highway:
-- **9600 bps** = School zone (slow, safe, works with old equipment)
-- **115200 bps** = Highway speed (fast, requires good "road conditions")
+
+-   **9600 bps** = School zone (slow, safe, works with old equipment)
+-   **115200 bps** = Highway speed (fast, requires good "road conditions")
 
 Both cars reach the destination, but faster speeds need:
-- Better timing precision (like good brakes at high speed)
-- Shorter cable distances (like highway vs bumpy road)
-- Higher quality hardware (like sports car vs old truck)
+
+-   Better timing precision (like good brakes at high speed)
+-   Shorter cable distances (like highway vs bumpy road)
+-   Higher quality hardware (like sports car vs old truck)
 
 ### Common Baud Rates
-- **9600 bps** - Most common for sensors, GPS modules (very reliable)
-- **19200 bps** - Faster sensors
-- **38400 bps** - Moderate speed
-- **57600 bps** - Higher speed applications  
-- **115200 bps** - Common for PC communication, Arduino default
+
+-   **9600 bps** - Most common for sensors, GPS modules (very reliable)
+-   **19200 bps** - Faster sensors
+-   **38400 bps** - Moderate speed
+-   **57600 bps** - Higher speed applications
+-   **115200 bps** - Common for PC communication, Arduino default
 
 ### Example Timing Calculation
 
 For **9600 baud**:
-- 9600 bits/second
-- Each bit duration = 1/9600 ≈ **104.17 microseconds**
+
+-   9600 bits/second
+-   Each bit duration = 1/9600 ≈ **104.17 microseconds**
 
 For a **8N1 frame** (8 data, No parity, 1 stop):
-- Total bits = 1 start + 8 data + 1 stop = 10 bits
-- Frame time = 10 × 104.17µs ≈ **1.04 milliseconds**
+
+-   Total bits = 1 start + 8 data + 1 stop = 10 bits
+-   Frame time = 10 × 104.17µs ≈ **1.04 milliseconds**
 
 ### Baud Rate Generation
 
@@ -207,6 +212,7 @@ Bit period = System_Clock / (Baud_Rate × Oversampling)
 Common oversampling: 16× (sample 16 times per bit for accuracy)
 
 Example: For 9600 baud with 70MHz system clock:
+
 ```
 Divider = 70,000,000 / (9600 × 16) = 456.6 ≈ 457
 ```
@@ -222,8 +228,8 @@ You'll see UART configs like **8N1**, **8E1**, **7O1**, etc.
 ### Common Configurations
 
 | Config | Data Bits | Parity | Stop Bits |
-|--------|-----------|--------|-----------|
-| 8N1    | 8         | None   | 1         | ← Most common
+| ------ | --------- | ------ | --------- | ------------- |
+| 8N1    | 8         | None   | 1         | ← Most common |
 | 8E1    | 8         | Even   | 1         |
 | 8O1    | 8         | Odd    | 1         |
 | 7E1    | 7         | Even   | 1         |
@@ -256,9 +262,10 @@ You'll see UART configs like **8N1**, **8E1**, **7O1**, etc.
 ### Clock Recovery
 
 Since UART is asynchronous (no shared clock), the receiver must:
-- Use a local clock running at the same baud rate
-- **Oversample** (typically 16×) to find bit centers accurately
-- **Resynchronize** on each start bit
+
+-   Use a local clock running at the same baud rate
+-   **Oversample** (typically 16×) to find bit centers accurately
+-   **Resynchronize** on each start bit
 
 ---
 
@@ -295,10 +302,11 @@ Time →
 Actual bit values on wire: **1 → 0 → 1 → 0 → 0 → 0 → 0 → 0 → 1 → 0 → 1**
 
 **Breaking it down step-by-step:**
-- 0x41 in binary: 0b**01000001** (reading left-to-right: bit7-bit6-bit5-bit4-bit3-bit2-bit1-bit0)
-- **Bit positions**: D7=**0**, D6=**1**, D5=**0**, D4=**0**, D3=**0**, D2=**0**, D1=**0**, D0=**1**
-- **LSB first** means we transmit D0 first, then D1, D2... up to D7 last
-- **Wire sequence**: START(0) → D0(**1**) → D1(**0**) → D2(**0**) → D3(**0**) → D4(**0**) → D5(**0**) → D6(**1**) → D7(**0**) → STOP(1)
+
+-   0x41 in binary: 0b**01000001** (reading left-to-right: bit7-bit6-bit5-bit4-bit3-bit2-bit1-bit0)
+-   **Bit positions**: D7=**0**, D6=**1**, D5=**0**, D4=**0**, D3=**0**, D2=**0**, D1=**0**, D0=**1**
+-   **LSB first** means we transmit D0 first, then D1, D2... up to D7 last
+-   **Wire sequence**: START(0) → D0(**1**) → D1(**0**) → D2(**0**) → D3(**0**) → D4(**0**) → D5(**0**) → D6(**1**) → D7(**0**) → STOP(1)
 
 ### Why LSB First?
 
@@ -315,43 +323,48 @@ Think of UART errors like package delivery problems:
 ### Common Errors
 
 1. **Framing Error** = Package arrives without proper wrapping
-   - Stop bit is not HIGH when expected
-   - **Usually means baud rate mismatch** (sender and receiver talking at different speeds!)
-   - Like: You're speaking fast but listener expects slow speech
-   - **Fix**: Make sure both devices use same baud rate setting!
+
+    - Stop bit is not HIGH when expected
+    - **Usually means baud rate mismatch** (sender and receiver talking at different speeds!)
+    - Like: You're speaking fast but listener expects slow speech
+    - **Fix**: Make sure both devices use same baud rate setting!
 
 2. **Parity Error** = Package checksum doesn't match
-   - Parity bit doesn't match calculated parity
-   - Indicates bit corruption (noise on the wire)
-   - Like: Counting items in a box and finding one missing
-   - **Fix**: Use shielded cables, shorter distances, or add error correction
+
+    - Parity bit doesn't match calculated parity
+    - Indicates bit corruption (noise on the wire)
+    - Like: Counting items in a box and finding one missing
+    - **Fix**: Use shielded cables, shorter distances, or add error correction
 
 3. **Overrun Error** = Mailbox is full, new package dropped
-   - New data arrives before previous data was read
-   - RX buffer/FIFO full
-   - Like: Mail piling up because you don't check mailbox
-   - **Fix**: Read data faster, use larger FIFO buffer
+
+    - New data arrives before previous data was read
+    - RX buffer/FIFO full
+    - Like: Mail piling up because you don't check mailbox
+    - **Fix**: Read data faster, use larger FIFO buffer
 
 4. **Break Condition** = Special "emergency" signal
-   - RX line held LOW for longer than a frame
-   - Can be used for special signaling (like "RESET" command)
-   - Like: Holding down a phone button to hang up
+    - RX line held LOW for longer than a frame
+    - Can be used for special signaling (like "RESET" command)
+    - Like: Holding down a phone button to hang up
 
 ### Debugging Tips 🔧
 
 **Most common UART problem: Baud rate mismatch!**
 
 Symptoms:
-- Receiving garbage data (random characters)
-- Missing characters
-- Framing errors
+
+-   Receiving garbage data (random characters)
+-   Missing characters
+-   Framing errors
 
 Solution checklist:
-- ✅ Check both devices use same baud rate (9600 = 9600)
-- ✅ Check both devices use same config (8N1 = 8N1)
-- ✅ Verify TX of device A connects to RX of device B (and vice versa)
-- ✅ Ensure common ground connection
-- ✅ Check cable length (keep under 15 meters for high baud rates)
+
+-   ✅ Check both devices use same baud rate (9600 = 9600)
+-   ✅ Check both devices use same config (8N1 = 8N1)
+-   ✅ Verify TX of device A connects to RX of device B (and vice versa)
+-   ✅ Ensure common ground connection
+-   ✅ Check cable length (keep under 15 meters for high baud rates)
 
 ---
 
@@ -362,13 +375,15 @@ Solution checklist:
 The word **"register"** has **3 different meanings** in hardware. Let's clear this up:
 
 #### 1️⃣ Memory-Mapped Registers (What we're talking about HERE!)
-- **What**: Special memory addresses the CPU uses to talk to peripherals
-- **Where**: They live at specific addresses like `0x00`, `0x04`, `0x08`
-- **How**: CPU reads/writes to these addresses to control UART
-- **Think**: Like mailboxes - CPU puts letters in (writes) or checks for mail (reads)
-- **In Verilog**: Declared as `reg [31:0] ctrl_register;` but used as storage
 
-**Example**: 
+-   **What**: Special memory addresses the CPU uses to talk to peripherals
+-   **Where**: They live at specific addresses like `0x00`, `0x04`, `0x08`
+-   **How**: CPU reads/writes to these addresses to control UART
+-   **Think**: Like mailboxes - CPU puts letters in (writes) or checks for mail (reads)
+-   **In Verilog**: Declared as `reg [31:0] ctrl_register;` but used as storage
+
+**Example**:
+
 ```verilog
 // If CPU writes to address 0x00, store in ctrl_register
 if (address == 32'h0000_0000 && !data_write_n)
@@ -376,13 +391,15 @@ if (address == 32'h0000_0000 && !data_write_n)
 ```
 
 #### 2️⃣ Shift Registers (Used INSIDE the UART)
-- **What**: Sequential circuits that shift bits left/right
-- **Where**: Inside TX/RX modules to serialize/deserialize data
-- **How**: Takes parallel byte (8 bits), outputs 1 bit at a time (or vice versa)
-- **Think**: Like a conveyor belt moving bits one position at a time
-- **In Verilog**: `reg [7:0] shift_reg;` with shift operations `<< 1` or `>> 1`
+
+-   **What**: Sequential circuits that shift bits left/right
+-   **Where**: Inside TX/RX modules to serialize/deserialize data
+-   **How**: Takes parallel byte (8 bits), outputs 1 bit at a time (or vice versa)
+-   **Think**: Like a conveyor belt moving bits one position at a time
+-   **In Verilog**: `reg [7:0] shift_reg;` with shift operations `<< 1` or `>> 1`
 
 **Example**:
+
 ```verilog
 // TX shift register - outputs bits one-by-one
 always @(posedge clk) begin
@@ -395,13 +412,15 @@ assign tx_out = shift_reg[0];  // Serial output!
 ```
 
 #### 3️⃣ Verilog `reg` Keyword (Just a language thing!)
-- **What**: Verilog syntax for variables assigned in `always` blocks
-- **Where**: Anywhere in your Verilog code
-- **How**: Just means "this holds a value" - might be a flip-flop, might be combinational
-- **Think**: Like declaring `int x;` in C - just a variable type
-- **Confusing**: Name is historical - doesn't always mean physical register/flip-flop!
+
+-   **What**: Verilog syntax for variables assigned in `always` blocks
+-   **Where**: Anywhere in your Verilog code
+-   **How**: Just means "this holds a value" - might be a flip-flop, might be combinational
+-   **Think**: Like declaring `int x;` in C - just a variable type
+-   **Confusing**: Name is historical - doesn't always mean physical register/flip-flop!
 
 **Example**:
+
 ```verilog
 reg [7:0] counter;        // Probably becomes flip-flops (sequential)
 reg [3:0] temp_value;     // Might be just wires (combinational)
@@ -421,9 +440,10 @@ These are the "control panel" the CPU uses to operate the UART peripheral.
 #### The Big Picture: CPU's View of the World
 
 Your TinyQV CPU sees **everything** as memory addresses. It doesn't care if it's reading/writing to:
-- Actual RAM (data storage)
-- ROM (program code)
-- Peripherals like UART (special hardware)
+
+-   Actual RAM (data storage)
+-   ROM (program code)
+-   Peripherals like UART (special hardware)
 
 **To the CPU, it's all just addresses!**
 
@@ -451,12 +471,14 @@ CPU's Address Space (Simplified):
 Let's trace a write operation step-by-step:
 
 **CPU Code (in C)**:
+
 ```c
 // CPU wants to enable UART at 115200 baud
 *((volatile uint32_t *)0x10000000) = 0xC1;  // Write to address 0x10000000
 ```
 
 **What the CPU does**:
+
 ```
 1. CPU puts 0x10000000 on address bus
 2. CPU puts 0x000000C1 on data bus
@@ -464,13 +486,14 @@ Let's trace a write operation step-by-step:
 ```
 
 **What the UART hardware does** (this is YOUR Verilog code!):
+
 ```verilog
 always @(posedge clk) begin
     // Address decoder: Is CPU talking to ME?
     if (address == 32'h1000_0000 && !data_write_n) begin
         // YES! CPU is writing to my CTRL register
         ctrl_register <= data_in[7:0];  // Grab bottom 8 bits
-        
+
         // Now extract the configuration
         baud_sel <= data_in[7:4];   // Bits 7-4 → baud rate
         enable   <= data_in[0];     // Bit 0 → enable
@@ -484,13 +507,13 @@ end
 
 #### Memory-Mapped vs Regular Memory
 
-| Aspect | Regular Memory (RAM) | Memory-Mapped Register |
-|--------|---------------------|------------------------|
-| **What it is** | Array of storage cells | Hardware control interface |
-| **When you read** | Returns stored data | Returns current hardware status |
-| **When you write** | Stores data for later | **Triggers hardware action!** |
-| **Predictable?** | Yes - write 5, read 5 | No - write 5, might read something else! |
-| **Example** | `array[10] = 42;` | `UART_TX = 'A';` (triggers transmission!) |
+| Aspect             | Regular Memory (RAM)   | Memory-Mapped Register                    |
+| ------------------ | ---------------------- | ----------------------------------------- |
+| **What it is**     | Array of storage cells | Hardware control interface                |
+| **When you read**  | Returns stored data    | Returns current hardware status           |
+| **When you write** | Stores data for later  | **Triggers hardware action!**             |
+| **Predictable?**   | Yes - write 5, read 5  | No - write 5, might read something else!  |
+| **Example**        | `array[10] = 42;`      | `UART_TX = 'A';` (triggers transmission!) |
 
 **Key difference**: Writing to memory-mapped registers **DOES SOMETHING** in hardware!
 
@@ -499,6 +522,7 @@ end
 #### Your UART: The Complete Picture
 
 **Hardware Block Diagram**:
+
 ```
      TinyQV CPU
          │
@@ -532,6 +556,7 @@ end
 ```
 
 **The flow**:
+
 1. CPU writes to address `0x08` (TX_DATA)
 2. Address decoder sees `0x08` and routes to TX_DATA register
 3. TX_DATA register captures the byte
@@ -550,14 +575,14 @@ Here's simplified code for YOUR UART register interface:
 module uart_register_interface (
     input clk,
     input rst_n,
-    
+
     // CPU Bus Interface
     input  [31:0] address,
     input  [31:0] data_in,
     output [31:0] data_out,
     input         data_write_n,  // 0 = write
     input         data_read_n,   // 0 = read
-    
+
     // To UART modules
     output [3:0]  baud_sel,
     output        enable,
@@ -591,7 +616,7 @@ always @(posedge clk or negedge rst_n) begin
     end
     else begin
         tx_start_pulse <= 1'b0;  // Default: no transmit
-        
+
         // Is CPU writing to us?
         if (!data_write_n && address[31:4] == BASE_ADDR[31:4]) begin
             case (address[3:0])
@@ -599,13 +624,13 @@ always @(posedge clk or negedge rst_n) begin
                     // Write to CTRL register
                     ctrl_register <= data_in[7:0];
                 end
-                
+
                 TXDATA_OFFSET: begin
                     // Write to TX_DATA triggers transmission!
                     tx_data_reg <= data_in[7:0];
                     tx_start_pulse <= 1'b1;  // Pulse to start TX
                 end
-                
+
                 // STATUS and RXDATA are read-only, ignore writes
             endcase
         end
@@ -624,7 +649,7 @@ reg [31:0] data_out_reg;
 always @(*) begin
     // Default: return 0
     data_out_reg = 32'h0000_0000;
-    
+
     // Is CPU reading from us?
     if (!data_read_n && address[31:4] == BASE_ADDR[31:4]) begin
         case (address[3:0])
@@ -632,12 +657,12 @@ always @(*) begin
                 // Build status word
                 data_out_reg = {28'h0, tx_busy, rx_ready, 2'b00};
             end
-            
+
             RXDATA_OFFSET: begin
                 // Return received data
                 data_out_reg = {24'h000000, rx_data};
             end
-            
+
             // CTRL and TXDATA are write-only, return 0
         endcase
     end
@@ -649,6 +674,7 @@ endmodule
 ```
 
 **Key insights**:
+
 1. **Address decoder**: `if (address == 0x10000000)` decides which register
 2. **Write logic**: Stores value when `data_write_n = 0`
 3. **Read logic**: Returns status/data when `data_read_n = 0`
@@ -665,14 +691,15 @@ endmodule
 The CPU executes **instructions** from your program. When it sees certain instructions, it generates read/write signals:
 
 **Example C Program**:
+
 ```c
 void send_hello() {
     char *uart_tx = (char *)0x10000008;  // TX_DATA address
     char *uart_status = (char *)0x10000004;  // STATUS address
-    
+
     // This instruction causes a READ
     while (*uart_status & 0x08);  // Read STATUS, check TX_BUSY bit
-    
+
     // This instruction causes a WRITE
     *uart_tx = 'H';  // Write 'H' to TX_DATA
 }
@@ -681,6 +708,7 @@ void send_hello() {
 **What the CPU does (simplified)**:
 
 **1. Read Operation** (`while (*uart_status & 0x08)`):
+
 ```
 CPU sees: "Load byte from address 0x10000004"
 
@@ -693,6 +721,7 @@ CPU Actions:
 ```
 
 **2. Write Operation** (`*uart_tx = 'H'`):
+
 ```
 CPU sees: "Store byte 'H' to address 0x10000008"
 
@@ -705,12 +734,13 @@ CPU Actions:
 ```
 
 **Assembly code that generates these signals**:
+
 ```assembly
 # Read STATUS register
 LW   t0, 0x10000004(zero)   # Load Word → data_read_n = 0
 ANDI t1, t0, 0x08           # Check bit 3
 
-# Write to TX_DATA register  
+# Write to TX_DATA register
 LI   t2, 0x48               # Load immediate 'H'
 SW   t2, 0x10000008(zero)   # Store Word → data_write_n = 0
 ```
@@ -752,7 +782,7 @@ SW   t2, 0x10000008(zero)   # Store Word → data_write_n = 0
               │                                                    │
          Your FPGA board                                   External hardware
       (Ice40 or similar)                              (Arduino, PC, GPS, etc.)
-              
+
          GND ─────────────── GND ─────────────────────── GND
          (Common ground required!)
 ```
@@ -760,17 +790,18 @@ SW   t2, 0x10000008(zero)   # Store Word → data_write_n = 0
 **Breaking it down**:
 
 1. **Device A = Your Entire TinyQV System**
-   - TinyQV CPU (runs your program)
-   - UART peripheral (your Verilog code)
-   - Both live on the same FPGA chip
-   - Connected internally via register bus
+
+    - TinyQV CPU (runs your program)
+    - UART peripheral (your Verilog code)
+    - Both live on the same FPGA chip
+    - Connected internally via register bus
 
 2. **Device B = External Device** (could be many things!)
-   - Another microcontroller (Arduino, ESP32, etc.)
-   - A PC running terminal software (PuTTY, screen, etc.)
-   - A GPS module
-   - A Bluetooth chip
-   - ANY device with a UART interface
+    - Another microcontroller (Arduino, ESP32, etc.)
+    - A PC running terminal software (PuTTY, screen, etc.)
+    - A GPS module
+    - A Bluetooth chip
+    - ANY device with a UART interface
 
 #### What Your CPU Does
 
@@ -830,6 +861,7 @@ uart_peripheral my_uart (
 ```
 
 **The signal journey**:
+
 ```
 Inside FPGA:                   Outside FPGA:
 tx_out (wire) → Pin driver → Physical pin voltage (3.3V or 0V) → Travels on wire → External device RX pin
@@ -844,12 +876,14 @@ Loopback testing is when you **connect Device A to itself** for testing purposes
 #### Loopback Configuration
 
 **Instead of this** (normal):
+
 ```
 TinyQV TX ──────► External Device RX
 TinyQV RX ◄────── External Device TX
 ```
 
 **You do this** (loopback):
+
 ```
 TinyQV TX ──┐
             ├──► Short wire
@@ -857,18 +891,21 @@ TinyQV RX ◄─┘
 ```
 
 **In testbench** (simulation):
+
 ```verilog
 // Connect TX directly to RX
 assign uart_rx = uart_tx;  // Whatever I send, I immediately receive
 ```
 
 **Why loopback?**
-- ✅ Test your TX module (does it transmit correctly?)
-- ✅ Test your RX module (does it receive correctly?)
-- ✅ Don't need external hardware
-- ✅ Easy to debug (you control both ends)
+
+-   ✅ Test your TX module (does it transmit correctly?)
+-   ✅ Test your RX module (does it receive correctly?)
+-   ✅ Don't need external hardware
+-   ✅ Easy to debug (you control both ends)
 
 **Example loopback test**:
+
 ```c
 // Send 'A', should receive 'A' back
 uart_send('A');
@@ -882,15 +919,15 @@ if (received == 'A') {
 
 ### Summary: Devices A & B
 
-| Component | What It Is | Role |
-|-----------|------------|------|
-| **TinyQV CPU** | Your RISC-V processor | Runs software, controls UART via registers |
-| **UART Peripheral** | Your Verilog module | Converts bytes to serial (TX), serial to bytes (RX) |
-| **Device A** | CPU + UART together | The complete sender/receiver system |
-| **Device B** | External hardware | The thing you're talking to (GPS, PC, Arduino, etc.) |
-| **TX Wire** | Physical connection | Carries serial data from A to B |
-| **RX Wire** | Physical connection | Carries serial data from B to A |
-| **Loopback** | Test configuration | A talks to itself (TX→RX on same device) |
+| Component           | What It Is            | Role                                                 |
+| ------------------- | --------------------- | ---------------------------------------------------- |
+| **TinyQV CPU**      | Your RISC-V processor | Runs software, controls UART via registers           |
+| **UART Peripheral** | Your Verilog module   | Converts bytes to serial (TX), serial to bytes (RX)  |
+| **Device A**        | CPU + UART together   | The complete sender/receiver system                  |
+| **Device B**        | External hardware     | The thing you're talking to (GPS, PC, Arduino, etc.) |
+| **TX Wire**         | Physical connection   | Carries serial data from A to B                      |
+| **RX Wire**         | Physical connection   | Carries serial data from B to A                      |
+| **Loopback**        | Test configuration    | A talks to itself (TX→RX on same device)             |
 
 **The key insight**: Your UART peripheral is the **interface** between the digital world inside the CPU and the physical serial communication world outside!
 
@@ -899,10 +936,11 @@ if (received == 'A') {
 ### The Control Panel Analogy 🎛️
 
 Think of UART **memory-mapped registers** like the dashboard in your car:
-- **Control Register** = Gear shift, turn signals (what you want to DO)
-- **Status Register** = Dashboard lights, fuel gauge (what's HAPPENING)
-- **Data Register** = The cargo you're carrying
-- **Baud Rate Register** = Speed limiter setting
+
+-   **Control Register** = Gear shift, turn signals (what you want to DO)
+-   **Status Register** = Dashboard lights, fuel gauge (what's HAPPENING)
+-   **Data Register** = The cargo you're carrying
+-   **Baud Rate Register** = Speed limiter setting
 
 **Key concept**: CPU doesn't directly control the UART wires. Instead, it writes to special memory addresses (registers), and the UART hardware reads those values to know what to do!
 
@@ -913,6 +951,7 @@ Think of UART **memory-mapped registers** like the dashboard in your car:
 **What it does**: You tell the UART HOW to operate
 
 **Typical bits**:
+
 ```
 Bit 7-4: Baud rate selection (0000=9600, 0001=19200, etc.)
 Bit 3-1: Reserved
@@ -920,6 +959,7 @@ Bit 0:   UART Enable (1=ON, 0=OFF)
 ```
 
 **Real example - Starting your UART**:
+
 ```c
 // I want 115200 baud rate, UART enabled
 UART_CTRL = 0x0C1;  // Binary: 00001100 0001
@@ -929,6 +969,7 @@ UART_CTRL = 0x0C1;  // Binary: 00001100 0001
 
 **Think of it like**: Setting your car's cruise control to 115 mph and turning the engine ON.
 V
+
 ---
 
 ### Register #2: STATUS Register (STATUS) - "The Dashboard"
@@ -936,6 +977,7 @@ V
 **What it does**: UART tells YOU what's happening (READ-ONLY!)
 
 **Typical bits**:
+
 ```
 Bit 7-4: Reserved
 Bit 3:   TX_BUSY (1=transmitter busy, 0=ready for new data)
@@ -945,6 +987,7 @@ Bit 0:   RX_ERROR (1=framing error, 0=no error)
 ```
 
 **Real example - Checking before sending**:
+
 ```c
 // Before sending data, check if TX is ready
 while (UART_STATUS & 0x08) {  // Bit 3: TX_BUSY
@@ -963,6 +1006,7 @@ UART_TX_DATA = 'A';  // Send the letter 'A'
 **What it does**: Write a byte here to SEND it
 
 **Real example - Sending "Hi"**:
+
 ```c
 // Step 1: Wait for TX to be ready
 while (UART_STATUS & 0x08);  // Wait while TX_BUSY=1
@@ -986,16 +1030,17 @@ UART_TX_DATA = 'i';
 **What it does**: Read a byte from here after receiving it
 
 **Real example - Receiving data**:
+
 ```c
 // Step 1: Check if data has arrived
 if (UART_STATUS & 0x04) {  // Bit 2: RX_READY=1?
-    
+
     // Step 2: Read the received byte
     char received = UART_RX_DATA;
-    
+
     // Reading automatically clears RX_READY flag!
     // UART is now ready to receive next byte
-    
+
     printf("Got: %c\n", received);
 }
 ```
@@ -1010,17 +1055,17 @@ if (UART_STATUS & 0x04) {  // Bit 2: RX_READY=1?
 void uart_echo() {
     // Setup: Enable UART at 115200 baud
     UART_CTRL = 0xC1;  // 115200 baud, enabled
-    
+
     while (1) {
         // 1. Wait for incoming data
         if (UART_STATUS & 0x04) {  // RX_READY?
-            
+
             // 2. Read what was received
             char data = UART_RX_DATA;
-            
+
             // 3. Wait until TX is ready
             while (UART_STATUS & 0x08);  // TX_BUSY?
-            
+
             // 4. Echo it back
             UART_TX_DATA = data;
         }
@@ -1044,9 +1089,10 @@ Address | Register  | Read/Write | What it does
 ```
 
 **Remember**:
-- **Write-only registers**: You SET them (like turning a knob)
-- **Read-only registers**: You CHECK them (like reading a gauge)
-- **Never** try to write to STATUS or read from CTRL!
+
+-   **Write-only registers**: You SET them (like turning a knob)
+-   **Read-only registers**: You CHECK them (like reading a gauge)
+-   **Never** try to write to STATUS or read from CTRL!
 
 ---
 
@@ -1055,29 +1101,33 @@ Address | Register  | Read/Write | What it does
 ### The Amusement Park Analogy
 
 **Without FIFO** = No queue line at a rollercoaster
-- Each person must get on the ride immediately
-- If ride operator is busy, people are turned away (OVERRUN!)
-- Very inefficient
+
+-   Each person must get on the ride immediately
+-   If ride operator is busy, people are turned away (OVERRUN!)
+-   Very inefficient
 
 **With FIFO** = Proper queue line (First In, First Out)
-- **TX FIFO**: People waiting to board the ride
-- **RX FIFO**: People exiting the ride into exit queue
-- Ride operator can handle them in batches
-- Much smoother operation!
+
+-   **TX FIFO**: People waiting to board the ride
+-   **RX FIFO**: People exiting the ride into exit queue
+-   Ride operator can handle them in batches
+-   Much smoother operation!
 
 ### Benefits
 
 Without FIFO:
-- ❌ CPU must read each byte immediately (stressful!)
-- ❌ Risk of overrun if CPU is busy with other tasks
-- ❌ Inefficient (CPU constantly interrupted)
+
+-   ❌ CPU must read each byte immediately (stressful!)
+-   ❌ Risk of overrun if CPU is busy with other tasks
+-   ❌ Inefficient (CPU constantly interrupted)
 
 With FIFO (First In, First Out):
-- ✅ **TX FIFO**: Stores multiple bytes to send (buffer outgoing data)
-- ✅ **RX FIFO**: Stores multiple received bytes (buffer incoming data)
-- ✅ CPU can read/write in bursts (more efficient)
-- ✅ Reduces overrun errors dramatically
-- ✅ Better CPU performance (fewer interrupts)
+
+-   ✅ **TX FIFO**: Stores multiple bytes to send (buffer outgoing data)
+-   ✅ **RX FIFO**: Stores multiple received bytes (buffer incoming data)
+-   ✅ CPU can read/write in bursts (more efficient)
+-   ✅ Reduces overrun errors dramatically
+-   ✅ Better CPU performance (fewer interrupts)
 
 **Typical FIFO depths**: 8, 16, 32, 64 bytes
 
@@ -1090,27 +1140,31 @@ With FIFO (First In, First Out):
 ### What You Need to Implement
 
 1. **TX Module**
-   - Shift register for serial output
-   - Baud rate generator
-   - State machine (IDLE → START → DATA → STOP)
+
+    - Shift register for serial output
+    - Baud rate generator
+    - State machine (IDLE → START → DATA → STOP)
 
 2. **RX Module**
-   - Oversampling (16×)
-   - Bit detection and framing
-   - State machine (IDLE → START → DATA → STOP)
+
+    - Oversampling (16×)
+    - Bit detection and framing
+    - State machine (IDLE → START → DATA → STOP)
 
 3. **Register Interface**
-   - Connect to TinyQV's 32-bit register bus
-   - Implement DR, SR, CR, BRR registers
+
+    - Connect to TinyQV's 32-bit register bus
+    - Implement DR, SR, CR, BRR registers
 
 4. **FIFOs** (highly recommended)
-   - At least 8-16 byte depth
-   - Simplifies CPU interaction
+
+    - At least 8-16 byte depth
+    - Simplifies CPU interaction
 
 5. **Interrupt Generation**
-   - RX data ready
-   - TX buffer empty
-   - Error conditions
+    - RX data ready
+    - TX buffer empty
+    - Error conditions
 
 ### Pin Mapping (from tt_wrapper.v)
 
@@ -1153,6 +1207,7 @@ data_read_n      → Read enable (active low)
 **The Analogy**: Like one person speaking slowly while the other expects fast speech - complete confusion!
 
 **Fix**:
+
 ```
 ✓ Always verify BOTH devices use the SAME baud rate
 ✓ Check datasheets for default baud rates
@@ -1166,10 +1221,11 @@ data_read_n      → Read enable (active low)
 **The Analogy**: Like two people both speaking into microphones with no ears - nobody listening!
 
 **Fix**:
+
 ```
 Device A TX ──────► Device B RX  ← Correct!
 Device A RX ◄────── Device B TX  ← Correct!
-          
+
 Device A GND ──────── Device B GND  ← Always connect ground!
 ```
 
@@ -1180,6 +1236,7 @@ Device A GND ──────── Device B GND  ← Always connect ground!
 **The Analogy**: Like two phones with bad connection - static and dropouts!
 
 **Fix**:
+
 ```
 ✓ ALWAYS connect GND between devices
 ✓ Ground is the voltage reference - without it, signals are meaningless!
@@ -1188,9 +1245,10 @@ Device A GND ──────── Device B GND  ← Always connect ground!
 ### Mistake #4: Wrong Frame Configuration
 
 **Problem**: One device uses 8N1, other uses 8E1 (different parity)  
-**Symptom**: Frame errors, missing bytes, data corruption  
+**Symptom**: Frame errors, missing bytes, data corruption
 
 **Fix**:
+
 ```
 ✓ Both devices must use SAME config: 8N1, 8E1, etc.
 ✓ 8N1 (8 data, No parity, 1 stop) is industry standard - use it!
@@ -1203,6 +1261,7 @@ Device A GND ──────── Device B GND  ← Always connect ground!
 **The Analogy**: Like shouting across a football field - works if close, fails if too far!
 
 **Fix**:
+
 ```
 Maximum Cable Length Guidelines:
 - 115200 bps → 15 meters (50 feet) max
@@ -1219,6 +1278,7 @@ For longer distances, use RS-232 or RS-485 drivers!
 **The Analogy**: Like voicemail box getting full - new messages get rejected!
 
 **Fix**:
+
 ```
 ✓ Use deeper FIFOs (16, 32, 64 bytes)
 ✓ Enable interrupts instead of polling
@@ -1229,9 +1289,10 @@ For longer distances, use RS-232 or RS-485 drivers!
 ### Mistake #7: Ignoring Voltage Level Compatibility
 
 **Problem**: Connecting 5V UART to 3.3V UART directly  
-**Symptom**: Damaged chips, erratic behavior, or device not working  
+**Symptom**: Damaged chips, erratic behavior, or device not working
 
 **Fix**:
+
 ```
 ✓ Check voltage levels in datasheets
 ✓ Use level shifters for voltage mismatch (5V ↔ 3.3V)
@@ -1241,9 +1302,10 @@ For longer distances, use RS-232 or RS-485 drivers!
 ### Mistake #8: Not Testing with Loopback First
 
 **Problem**: Jumping straight to full system, can't tell which side is broken  
-**Symptom**: Nothing works, hours of debugging, frustration!  
+**Symptom**: Nothing works, hours of debugging, frustration!
 
 **Fix**:
+
 ```
 Loopback Test (connect TX to RX on SAME device):
 
@@ -1264,28 +1326,33 @@ Device RX ──┘
 ### 🎯 Quick Summary
 
 **What is UART?**
-- Simple serial communication protocol (one bit at a time)
-- Like a phone conversation: TX = mouth, RX = ear
-- Only 2 wires needed: TX and RX (plus ground)
+
+-   Simple serial communication protocol (one bit at a time)
+-   Like a phone conversation: TX = mouth, RX = ear
+-   Only 2 wires needed: TX and RX (plus ground)
 
 **How fast?**
-- Baud rate = bits per second
-- Common: 9600 (slow/reliable) to 115200 (fast)
-- Both devices MUST use same speed!
+
+-   Baud rate = bits per second
+-   Common: 9600 (slow/reliable) to 115200 (fast)
+-   Both devices MUST use same speed!
 
 **Data Format (8N1 - most common):**
+
 ```
 IDLE → START(0) → 8 DATA BITS (LSB first) → STOP(1) → IDLE
 ```
 
 **Where's it used?**
-- 🛰️ GPS modules
-- 🎧 Bluetooth chips
-- 🤖 Arduino Serial Monitor
-- 💳 Card readers
-- 🏭 Industrial sensors
+
+-   🛰️ GPS modules
+-   🎧 Bluetooth chips
+-   🤖 Arduino Serial Monitor
+-   💳 Card readers
+-   🏭 Industrial sensors
 
 **Common Problems:**
+
 1. **Garbage data** → Check baud rate matches on both sides!
 2. **Missing data** → Add FIFO buffers
 3. **Wrong connections** → TX connects to RX (crossover!)
@@ -1298,7 +1365,7 @@ IDLE → START(0) → 8 DATA BITS (LSB first) → STOP(1) → IDLE
 ✅ Register interface (CTRL, STATUS, TX_DATA, RX_DATA)  
 ✅ FIFO buffers (highly recommended!)  
 ✅ Interrupt generation (RX data ready)  
-✅ Error detection (framing, overrun)  
+✅ Error detection (framing, overrun)
 
 ### 🎓 Remember These Rules!
 
@@ -1352,19 +1419,22 @@ The basic UART we've discussed works, but has limitations in real-world applicat
 **The Restaurant Kitchen Analogy:**
 
 Imagine a restaurant without a prep area:
-- **Without FIFO**: Chef must cook each order immediately when waiter arrives
-  - If chef is busy → order gets lost!
-  - Waiter must wait → inefficient!
-  - Kitchen backs up during rush hour
 
-- **With FIFO**: Orders go to a ticket queue (prep station)
-  - Chef cooks in order (First In, First Out)
-  - Waiter can leave immediately
-  - Kitchen runs smoothly even when busy
+-   **Without FIFO**: Chef must cook each order immediately when waiter arrives
+
+    -   If chef is busy → order gets lost!
+    -   Waiter must wait → inefficient!
+    -   Kitchen backs up during rush hour
+
+-   **With FIFO**: Orders go to a ticket queue (prep station)
+    -   Chef cooks in order (First In, First Out)
+    -   Waiter can leave immediately
+    -   Kitchen runs smoothly even when busy
 
 **In UART terms:**
 
 **TX Without FIFO:**
+
 ```
 CPU: "Send this byte!"
 UART TX: "Sorry, I'm still transmitting the previous byte!"
@@ -1372,6 +1442,7 @@ CPU: *waits... wasting cycles*
 ```
 
 **TX With FIFO:**
+
 ```
 CPU: "Send these 16 bytes!"
 UART TX FIFO: "Got them! You can do other work now."
@@ -1380,6 +1451,7 @@ CPU: *free to do other important work*
 ```
 
 **RX Without FIFO:**
+
 ```
 UART RX: "New byte received!"
 CPU: *busy with other task, can't read immediately*
@@ -1388,6 +1460,7 @@ Result: DATA LOST! ❌
 ```
 
 **RX With FIFO:**
+
 ```
 UART RX: "Byte 1 stored in FIFO"
 UART RX: "Byte 2 stored in FIFO"
@@ -1403,9 +1476,10 @@ Result: All data preserved! ✅
 **Key Concepts:**
 
 1. **Depth**: How many bytes the FIFO can hold
-   - Common depths: 4, 8, 16, 32, 64 bytes
-   - Example: 16-byte FIFO = can store 16 bytes before overflowing
-   - **Trade-off**: Deeper FIFO = more chip area but better buffering
+
+    - Common depths: 4, 8, 16, 32, 64 bytes
+    - Example: 16-byte FIFO = can store 16 bytes before overflowing
+    - **Trade-off**: Deeper FIFO = more chip area but better buffering
 
 2. **Write Pointer**: Points to where next byte will be written
 3. **Read Pointer**: Points to where next byte will be read from
@@ -1453,15 +1527,17 @@ REJECTED! Full flag prevents data loss.
 ### FIFO Watermarks (Thresholds)
 
 **Think of watermarks like fuel gauge indicators:**
-- 🔴 **Full**: Tank at maximum (stop pumping!)
-- 🟡 **High-Water Mark**: Tank 75% full (slow down!)
-- 🟢 **Half**: Tank 50% (normal operation)
-- 🟡 **Low-Water Mark**: Tank 25% (time to refuel soon)
-- 🔴 **Empty**: Tank empty (urgent!)
+
+-   🔴 **Full**: Tank at maximum (stop pumping!)
+-   🟡 **High-Water Mark**: Tank 75% full (slow down!)
+-   🟢 **Half**: Tank 50% (normal operation)
+-   🟡 **Low-Water Mark**: Tank 25% (time to refuel soon)
+-   🔴 **Empty**: Tank empty (urgent!)
 
 **In FIFO terms:**
 
 **TX FIFO Watermarks:**
+
 ```
 Depth = 16 bytes
 
@@ -1487,16 +1563,18 @@ Depth = 16 bytes
 **Why Watermarks Matter:**
 
 1. **TX FIFO Low Watermark** (e.g., 4 bytes left):
-   - Interrupt CPU: "Please send more data soon!"
-   - Prevents TX underrun (UART idle because FIFO is empty)
+
+    - Interrupt CPU: "Please send more data soon!"
+    - Prevents TX underrun (UART idle because FIFO is empty)
 
 2. **RX FIFO High Watermark** (e.g., 12 bytes filled):
-   - Interrupt CPU: "Please read data soon!"
-   - Prevents RX overrun (data lost because FIFO overflows)
+
+    - Interrupt CPU: "Please read data soon!"
+    - Prevents RX overrun (data lost because FIFO overflows)
 
 3. **Efficient Bulk Transfers**:
-   - CPU can wait until LOW watermark → then write 8-12 bytes at once
-   - Reduces interrupt overhead (fewer interrupts = less CPU time wasted)
+    - CPU can wait until LOW watermark → then write 8-12 bytes at once
+    - Reduces interrupt overhead (fewer interrupts = less CPU time wasted)
 
 ### FIFO Registers & Status
 
@@ -1536,11 +1614,12 @@ RX_FIFO_STATUS (0x20):
 ✅ **Data Integrity**: No data loss during CPU busy periods  
 ✅ **Reduced Interrupts**: Process data in batches  
 ✅ **Higher Throughput**: Continuous transmission without gaps  
-✅ **Tolerance to Jitter**: Absorbs timing variations  
+✅ **Tolerance to Jitter**: Absorbs timing variations
 
 ### FIFO Design Considerations
 
 **Depth Selection:**
+
 ```
 Small FIFO (4 bytes):
   + Less chip area
@@ -1564,10 +1643,11 @@ Large FIFO (64+ bytes):
 ```
 
 **Implementation Cost (Rough Estimates):**
-- 4-byte FIFO: ~150-200 cells
-- 8-byte FIFO: ~250-350 cells
-- 16-byte FIFO: ~400-600 cells
-- 32-byte FIFO: ~750-1000 cells
+
+-   4-byte FIFO: ~150-200 cells
+-   8-byte FIFO: ~250-350 cells
+-   16-byte FIFO: ~400-600 cells
+-   32-byte FIFO: ~750-1000 cells
 
 **Our Choice:** 16-byte TX and RX FIFOs (industry standard, good balance)
 
@@ -1580,6 +1660,7 @@ Large FIFO (64+ bytes):
 **The Package Delivery Analogy:**
 
 **Without Flow Control:**
+
 ```
 Sender: "Here's package 1!" *throws*
 Sender: "Here's package 2!" *throws*
@@ -1589,6 +1670,7 @@ Result: Packages on the ground (data lost)
 ```
 
 **With Flow Control (RTS/CTS):**
+
 ```
 Receiver: "I'm Ready To receive (RTS low)"
 Sender: "Clear To Send (CTS low), sending now!"
@@ -1605,18 +1687,21 @@ Result: All packages received safely!
 ### RTS/CTS Signals Explained
 
 **RTS** = Request To Send (actually means "Ready To Receive"!)
-- **Driven by**: Receiver
-- **Purpose**: Tells sender if receiver is ready for data
-- **Active LOW**: RTS=0 means "I'm ready, send data"
-- **Active HIGH**: RTS=1 means "I'm busy, don't send!"
+
+-   **Driven by**: Receiver
+-   **Purpose**: Tells sender if receiver is ready for data
+-   **Active LOW**: RTS=0 means "I'm ready, send data"
+-   **Active HIGH**: RTS=1 means "I'm busy, don't send!"
 
 **CTS** = Clear To Send
-- **Driven by**: Sender (or remote device's RTS in typical wiring)
-- **Purpose**: Tells receiver if sender is ready to receive
-- **Active LOW**: CTS=0 means "You can send data"
-- **Active HIGH**: CTS=1 means "Don't send, I'm not ready"
+
+-   **Driven by**: Sender (or remote device's RTS in typical wiring)
+-   **Purpose**: Tells receiver if sender is ready to receive
+-   **Active LOW**: CTS=0 means "You can send data"
+-   **Active HIGH**: CTS=1 means "Don't send, I'm not ready"
 
 **Typical Wiring (Full-Duplex with Flow Control):**
+
 ```
 Device A                    Device B
 ────────                    ────────
@@ -1639,6 +1724,7 @@ Device B controls flow:
 ### Flow Control FSM
 
 **Transmitter with Flow Control:**
+
 ```
 IDLE state:
   if (data_to_send && !cts)  // CTS low = ready
@@ -1664,6 +1750,7 @@ STOP state:
 ```
 
 **Receiver Flow Control Logic:**
+
 ```
 RX FIFO Monitor:
   if (rx_fifo_count >= HIGH_WATERMARK)
@@ -1676,16 +1763,16 @@ RX FIFO Monitor:
 
 ```
 Sender                         Receiver
-                                         
+
 TX: ─┐    ┌───┐   ┌───┬─...    ┌──── (Data bits)
-      └────┘   └───┘   └────────┘      
-     IDLE START DATA...         IDLE  
-                                         
+      └────┘   └───┘   └────────┘
+     IDLE START DATA...         IDLE
+
 CTS: ──────────────────┐    ┌─────── (Receiver's RTS → Sender's CTS)
-                       └────┘          
-                       BUSY  READY    
-                       (pause)         
-                                         
+                       └────┘
+                       BUSY  READY
+                       (pause)
+
 Time: ──→──→──→──→──→──→──→──→──→──→
       Byte1 Byte2 PAUSE  Resume Byte3
 
@@ -1701,6 +1788,7 @@ What happened:
 ### When to Use Flow Control
 
 **✅ Use Flow Control When:**
+
 1. High-speed data transfer (38400 bps and above)
 2. Receiver might be slower than sender (CPU interrupt latency)
 3. Large bursts of data (file transfers)
@@ -1708,6 +1796,7 @@ What happened:
 5. Real-time systems where data loss is unacceptable
 
 **❌ Flow Control Not Needed When:**
+
 1. Low-speed communication (9600 bps)
 2. Small, infrequent messages
 3. Guaranteed CPU response time (hard real-time)
@@ -1717,37 +1806,42 @@ What happened:
 ### Flow Control Modes
 
 **1. Hardware Flow Control (RTS/CTS):**
-- ✅ Fast response (no software delay)
-- ✅ Reliable (dedicated signals)
-- ❌ Requires extra pins (2 more wires)
-- **Use when**: Pins available, high-speed needed
+
+-   ✅ Fast response (no software delay)
+-   ✅ Reliable (dedicated signals)
+-   ❌ Requires extra pins (2 more wires)
+-   **Use when**: Pins available, high-speed needed
 
 **2. Software Flow Control (XON/XOFF):**
-- ✅ No extra pins needed
-- ❌ Slower (in-band signaling)
-- ❌ Can fail if control characters corrupted
-- Sends special characters: XON (0x11) = "resume", XOFF (0x13) = "pause"
-- **Use when**: Pins limited, speed not critical
+
+-   ✅ No extra pins needed
+-   ❌ Slower (in-band signaling)
+-   ❌ Can fail if control characters corrupted
+-   Sends special characters: XON (0x11) = "resume", XOFF (0x13) = "pause"
+-   **Use when**: Pins limited, speed not critical
 
 **3. No Flow Control:**
-- ✅ Simplest implementation
-- ❌ Risk of data loss
-- **Use when**: FIFO large enough, CPU fast enough, or data loss acceptable
+
+-   ✅ Simplest implementation
+-   ❌ Risk of data loss
+-   **Use when**: FIFO large enough, CPU fast enough, or data loss acceptable
 
 ### Our Implementation
 
 **For this project, we're implementing:**
-- ✅ 16-byte TX FIFO
-- ✅ 16-byte RX FIFO
-- ✅ Hardware flow control (RTS/CTS)
-- ✅ FIFO watermark interrupts
-- ✅ Configurable thresholds
+
+-   ✅ 16-byte TX FIFO
+-   ✅ 16-byte RX FIFO
+-   ✅ Hardware flow control (RTS/CTS)
+-   ✅ FIFO watermark interrupts
+-   ✅ Configurable thresholds
 
 **Why?**
-- Demonstrates production-quality design
-- Prevents data loss at all baud rates
-- Efficient CPU usage (batch processing)
-- Industry-standard features (16550A compatible)
+
+-   Demonstrates production-quality design
+-   Prevents data loss at all baud rates
+-   Efficient CPU usage (batch processing)
+-   Industry-standard features (16550A compatible)
 
 ---
 
@@ -1756,11 +1850,12 @@ What happened:
 ### Scenario: Receiving a 32-byte Packet
 
 **Setup:**
-- RX FIFO: 16 bytes deep
-- High watermark: 12 bytes
-- Low watermark: 4 bytes
-- Baud rate: 115200 bps (~87 μs per byte)
-- CPU interrupt latency: ~500 μs (busy with other tasks)
+
+-   RX FIFO: 16 bytes deep
+-   High watermark: 12 bytes
+-   Low watermark: 4 bytes
+-   Baud rate: 115200 bps (~87 μs per byte)
+-   CPU interrupt latency: ~500 μs (busy with other tasks)
 
 **Timeline:**
 
@@ -1768,41 +1863,42 @@ What happened:
 t=0ms: Packet starts arriving
   RX FIFO: [_][_][_][_][_][_][_][_][_][_][_][_][_][_][_][_]
   RTS: LOW (ready)
-  
+
 t=1ms: 11 bytes received (87μs × 11 ≈ 957μs)
   RX FIFO: [01][02][03][04][05][06][07][08][09][10][11][_][_][_][_][_]
   RTS: LOW (still space)
   Count: 11
-  
+
 t=1.1ms: 12th byte received
   RX FIFO: [01][02][03][04][05][06][07][08][09][10][11][12][_][_][_][_]
   RTS: HIGH ← Watermark exceeded! Signal sender to pause!
   Count: 12
   Interrupt: RX_FIFO_ALMOST_FULL → CPU notified
-  
+
 t=1.2ms: Sender sees RTS high (via its CTS pin)
   Sender: "Pausing after current byte completes..."
-  
+
 t=1.7ms: CPU responds to interrupt (500μs latency)
   CPU reads 8 bytes from FIFO in burst
   RX FIFO: [09][10][11][12][_][_][_][_][_][_][_][_][_][_][_][_]
   Count: 4 ← Below low watermark!
   RTS: LOW ← Signal sender: "Resume!"
-  
+
 t=1.8ms: Sender sees RTS low again
   Sender: "Resuming transmission..."
   Remaining 20 bytes start arriving
-  
+
 t=3.5ms: All 32 bytes received successfully!
   Result: ✅ NO DATA LOST despite CPU being slower than data rate!
 ```
 
 **Without FIFO or Flow Control:**
+
 ```
 t=1ms: 11 bytes received
   Single-byte register holds only latest byte: [11]
   Bytes 01-10: LOST! ❌
-  
+
 Result: Only last byte preserved, 30 bytes lost!
 ```
 
@@ -1811,11 +1907,12 @@ Result: Only last byte preserved, 30 bytes lost!
 ## Implementation Checklist (Updated)
 
 ### Basic UART (Phase 1 - Completed)
+
 ✅ Baud rate generator  
 ✅ UART TX (basic)  
 ✅ UART RX (basic)  
 ✅ Register interface  
-✅ Interrupt generation  
+✅ Interrupt generation
 
 ---
 
@@ -1827,6 +1924,7 @@ Result: Only last byte preserved, 30 bytes lost!
 The basic UART has single-byte TX/RX registers. If the CPU can't service interrupts immediately, data is lost.
 
 **Real-World Scenario:**
+
 ```
 UART receives bytes at 115200 bps = 1 byte every 86.8 µs
 CPU interrupt latency = 200 µs (context switch, handler overhead)
@@ -1841,6 +1939,7 @@ Result: 2 out of 3 bytes LOST! ❌
 ```
 
 **Solution: FIFO Buffers**
+
 ```
 UART receives bytes → Stored in 16-byte FIFO
 CPU reads when ready → Multiple bytes preserved
@@ -1872,6 +1971,7 @@ Visual Analogy:
 ```
 
 **FIFO Operations:**
+
 1. **Write (Push)**: Add byte to tail of FIFO
 2. **Read (Pop)**: Remove byte from head of FIFO
 3. **Full**: Cannot write more (all slots occupied)
@@ -2011,6 +2111,7 @@ TX FIFO (draining):
 ```
 
 **Configurble Watermarks:**
+
 ```verilog
 // Register: FIFO_CTRL
 [7:4] RX_WATERMARK  (interrupt triggers when RX count >= watermark)
@@ -2024,6 +2125,7 @@ TX_WATERMARK = 4  → Interrupt when 4 or fewer bytes in TX FIFO
 ### FIFO Overflow & Underflow Protection
 
 **Overflow (Writing to Full FIFO):**
+
 ```
 TX FIFO Full (count = 16):
 ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
@@ -2042,6 +2144,7 @@ Our Implementation: Drop + Set error flag
 ```
 
 **Underflow (Reading from Empty FIFO):**
+
 ```
 RX FIFO Empty (count = 0):
 ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
@@ -2066,6 +2169,7 @@ Our Implementation: Return 0x00 + Set error flag
 ### The Flow Control Problem
 
 **Scenario: Fast Sender, Slow Receiver**
+
 ```
 Sender transmits at 115200 bps = 11520 bytes/sec
 Receiver processes at 5000 bytes/sec (CPU busy with other tasks)
@@ -2081,6 +2185,7 @@ Result: Data loss inevitable without sender knowing receiver status
 ```
 
 **Solution: Hardware Flow Control**
+
 ```
 Receiver signals: "I'm busy, please wait!"
 Sender obeys: Pauses transmission until receiver ready
@@ -2100,22 +2205,24 @@ Result: Zero data loss! ✅
 ### RTS/CTS Handshaking Protocol
 
 **Signal Definitions:**
-- **RTS (Request To Send)**: Output from our device
-  - RTS=0: "I'm ready to receive data"
-  - RTS=1: "I'm busy, don't send data"
-  
-- **CTS (Clear To Send)**: Input to our device
-  - CTS=0: "Remote device ready, you can transmit"
-  - CTS=1: "Remote device busy, don't transmit"
+
+-   **RTS (Request To Send)**: Output from our device
+    -   RTS=0: "I'm ready to receive data"
+    -   RTS=1: "I'm busy, don't send data"
+-   **CTS (Clear To Send)**: Input to our device
+    -   CTS=0: "Remote device ready, you can transmit"
+    -   CTS=1: "Remote device busy, don't transmit"
 
 **Note on Naming Confusion:**
 The naming is historical and confusing:
-- **RTS** actually means "I'm NOT ready" when HIGH (opposite of name!)
-- **CTS** actually means "Remote is NOT ready" when HIGH
+
+-   **RTS** actually means "I'm NOT ready" when HIGH (opposite of name!)
+-   **CTS** actually means "Remote is NOT ready" when HIGH
 
 **Think of it as:**
-- RTS = "**R**eceiver **T**oo **S**low" flag
-- CTS = "**C**an't **T**ransmit **S**ignal"
+
+-   RTS = "**R**eceiver **T**oo **S**low" flag
+-   CTS = "**C**an't **T**ransmit **S**ignal"
 
 ### RTS Logic (Receiver Side)
 
@@ -2212,23 +2319,23 @@ Scenario:
 t=0:   Both devices ready
        A: RTS=0, CTS=0
        B: RTS=0, CTS=0
-       
+
 t=1:   A transmits to B (B's RX FIFO filling)
        A: TX active, monitoring CTS=0
        B: RX receiving, RTS=0
-       
+
 t=2:   B's RX FIFO almost full (14/16)
        B: Asserts RTS=1
        A: Sees CTS=1 → Pauses TX
-       
+
 t=3:   B's CPU reads FIFO → (6/16)
        B: Deasserts RTS=0
        A: Sees CTS=0 → Resumes TX
-       
+
 t=4:   A's RX FIFO almost full (14/16)
        A: Asserts RTS=1
        B: Sees CTS=1 → Pauses TX
-       
+
 t=5:   A's CPU reads FIFO → (5/16)
        A: Deasserts RTS=0
        B: Sees CTS=0 → Resumes TX
@@ -2301,6 +2408,7 @@ Register: STATUS (0x04) - Updated bits
 **Problem:** Fixed threshold might be too conservative or aggressive
 
 **Solution:** Dynamic threshold based on CPU responsiveness
+
 ```
 Monitor RX interrupt latency:
 - Fast CPU (latency < 100µs):  threshold = 15 (aggressive)
@@ -2372,6 +2480,7 @@ else:
 ### Performance Comparison
 
 **Without FIFOs or Flow Control:**
+
 ```
 - Max burst: 1 byte (single register)
 - CPU must respond within: 86.8 µs @ 115200 bps
@@ -2380,6 +2489,7 @@ else:
 ```
 
 **With FIFOs Only:**
+
 ```
 - Max burst: 16 bytes (FIFO depth)
 - CPU must respond within: 1.39 ms @ 115200 bps
@@ -2388,6 +2498,7 @@ else:
 ```
 
 **With FIFOs + Flow Control:**
+
 ```
 - Max burst: Unlimited (sender pauses when needed)
 - CPU response time: Flexible (seconds if needed)
@@ -2396,6 +2507,7 @@ else:
 ```
 
 ### Enhanced UART (Phase 2 - Next Steps)
+
 📋 TX FIFO (16 bytes) ← Section complete ✅  
 📋 RX FIFO (16 bytes) ← Section complete ✅  
 📋 FIFO watermark detection ← Section complete ✅  
@@ -2403,7 +2515,7 @@ else:
 📋 CTS input (transmitter flow control) ← Section complete ✅  
 📋 Updated status registers ← Section complete ✅  
 📋 FIFO control registers ← Section complete ✅  
-📋 Enhanced testing (FIFO overflow, flow control)  
+📋 Enhanced testing (FIFO overflow, flow control)
 
 ---
 

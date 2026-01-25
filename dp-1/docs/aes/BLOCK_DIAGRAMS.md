@@ -572,14 +572,14 @@ Note: Decryption uses inverse operations
 %%{init: {'theme':'base', 'themeVariables': { 'fontSize':'14px'}}}%%
 stateDiagram-v2
     [*] --> IDLE
-    
+
     IDLE --> KEY_EXPAND : start=1, key_load=1
     IDLE --> INIT_ROUND : start=1, key_load=0
-    
+
     KEY_EXPAND --> INIT_ROUND : key_expansion_done=1
-    
+
     INIT_ROUND --> ROUND_1 : Add initial round key
-    
+
     ROUND_1 --> ROUND_2 : SubBytes→ShiftRows→MixColumns→AddRoundKey
     ROUND_2 --> ROUND_3
     ROUND_3 --> ROUND_4
@@ -588,19 +588,19 @@ stateDiagram-v2
     ROUND_6 --> ROUND_7
     ROUND_7 --> ROUND_8
     ROUND_8 --> ROUND_9
-    
+
     ROUND_9 --> FINAL_ROUND : Full round complete
-    
+
     FINAL_ROUND --> DONE : SubBytes→ShiftRows→AddRoundKey (no MixColumns)
-    
+
     DONE --> IDLE : done=1, output ciphertext
-    
+
     note right of KEY_EXPAND
         Generates 11 round keys
         from 128-bit input key
         Takes 10-11 cycles
     end note
-    
+
     note right of ROUND_1
         Rounds 1-9: Full transformation
         - SubBytes (S-Box lookup)
@@ -608,7 +608,7 @@ stateDiagram-v2
         - MixColumns (GF multiplication)
         - AddRoundKey (XOR with key)
     end note
-    
+
     note right of FINAL_ROUND
         Round 10: No MixColumns
         Only SubBytes, ShiftRows, AddRoundKey
@@ -686,11 +686,11 @@ Clock Cycle:  0    1    2  ...  11   12   13 ...  21   22   23   24
 start        ────┐                                                 ┌────
                  └─────────────────────────────────────────────────┘
 
-key_load     ────┐                                                      
-                 └──────┐                                               
+key_load     ────┐
+                 └──────┐
                         └───────────────────────────────────────────────
 
-state        IDLE  │KEY_EXP │LD │I_X│R1 │R2 │...│R9 │R10│DONE│IDLE    
+state        IDLE  │KEY_EXP │LD │I_X│R1 │R2 │...│R9 │R10│DONE│IDLE
                    └────────┴───┴───┴───┴───┴───┴───┴───┴────┴────────
 
 busy         ─────────┐                                         ┌──────
@@ -728,9 +728,9 @@ Area: Small (1 round logic reused)
 
 Pipelined (Advanced, not implemented):
 ┌────────────────────────────────────────────────────────────┐
-│  Block 1: │IX│R1│R2│R3│R4│R5│R6│R7│R8│R9│RF│                 
-│  Block 2:    │IX│R1│R2│R3│R4│R5│R6│R7│R8│R9│RF│              
-│  Block 3:       │IX│R1│R2│R3│R4│R5│R6│R7│R8│R9│RF│           
+│  Block 1: │IX│R1│R2│R3│R4│R5│R6│R7│R8│R9│RF│
+│  Block 2:    │IX│R1│R2│R3│R4│R5│R6│R7│R8│R9│RF│
+│  Block 3:       │IX│R1│R2│R3│R4│R5│R6│R7│R8│R9│RF│
 └────────────────────────────────────────────────────────────┘
 Latency: ~11 cycles/block (first block)
 Throughput: 1 block every cycle (after pipeline fill)
@@ -913,26 +913,29 @@ Usage Flow:
 This document provides comprehensive visual representations of the AES-128 encryption engine:
 
 **Key Components:**
-- AES-128 core with round function pipeline
-- Key expansion module (generates 11 round keys)
-- Integration with UART TX/RX data paths
-- FIFO buffers for block accumulation
-- Register interface for key management
+
+-   AES-128 core with round function pipeline
+-   Key expansion module (generates 11 round keys)
+-   Integration with UART TX/RX data paths
+-   FIFO buffers for block accumulation
+-   Register interface for key management
 
 **Characteristics:**
-- **Iterative architecture**: Reuses one round function 10 times
-- **Area-efficient**: Suitable for FPGA/ASIC constraints
-- **Latency**: ~24 clock cycles per 128-bit block
-- **Throughput**: Adequate for UART serial speeds (115200 bps)
+
+-   **Iterative architecture**: Reuses one round function 10 times
+-   **Area-efficient**: Suitable for FPGA/ASIC constraints
+-   **Latency**: ~24 clock cycles per 128-bit block
+-   **Throughput**: Adequate for UART serial speeds (115200 bps)
 
 **Security:**
-- Standard AES-128 (NIST FIPS 197)
-- 10-round encryption/decryption
-- Symmetric key cryptography
-- 128-bit block size matches 16-byte FIFO depth
+
+-   Standard AES-128 (NIST FIPS 197)
+-   10-round encryption/decryption
+-   Symmetric key cryptography
+-   128-bit block size matches 16-byte FIFO depth
 
 For detailed algorithm explanations, see [AES_FUNDAMENTALS.md](AES_FUNDAMENTALS.md).
 
 ---
 
-*Last Updated: January 21, 2026*
+_Last Updated: January 21, 2026_

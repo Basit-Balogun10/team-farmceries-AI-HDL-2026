@@ -5,33 +5,37 @@ Team implementation of a **Secure UART peripheral** with FIFOs, flow control, an
 ## Project Overview
 
 ### Phase 1: Basic UART (Completed ✅)
-- **5 core modules**: baud_gen, uart_tx, uart_rx, register_interface, peripheral
-- **37/37 tests passing** across 8 test suites
-- **0.018 mm²** area, **0ns WNS**, **0.0014 µW** power
-- **Production-ready** with clean synthesis
+
+-   **5 core modules**: baud_gen, uart_tx, uart_rx, register_interface, peripheral
+-   **37/37 tests passing** across 8 test suites
+-   **0.018 mm²** area, **0ns WNS**, **0.0014 µW** power
+-   **Production-ready** with clean synthesis
 
 ### Phase 2: Secure UART Enhancements (In Progress 🔄)
-- **FIFO Buffers**: 16-byte TX/RX with watermark detection
-- **Flow Control**: RTS/CTS hardware handshaking
-- **AES-128 Engine**: Iterative encryption (~24 cycles/block)
-- **Enhanced Interface**: 12 registers (6 UART + 6 security/FIFO)
-- **Target**: ≤0.050 mm², ≤15 µW, 0ns WNS @ 70MHz
+
+-   **FIFO Buffers**: 16-byte TX/RX with watermark detection
+-   **Flow Control**: RTS/CTS hardware handshaking
+-   **AES-128 Engine**: Iterative encryption (~24 cycles/block)
+-   **Enhanced Interface**: 12 registers (6 UART + 6 security/FIFO)
+-   **Target**: ≤0.050 mm², ≤15 µW, 0ns WNS @ 70MHz
 
 ## Quick Start
 
 ### Prerequisites
 
 **Required Tools:**
-- **Docker** - For running OpenLANE (PPA analysis)
-- **Yosys** - For RTL synthesis
-- **Python 3.8+** - For scripts and cocotb
-- **iverilog** - For simulation (if using cocotb)
-- **GTKWave** - For viewing waveforms (optional)
-- **KLayout** - For viewing GDSII layouts (optional)
+
+-   **Docker** - For running OpenLANE (PPA analysis)
+-   **Yosys** - For RTL synthesis
+-   **Python 3.8+** - For scripts and cocotb
+-   **iverilog** - For simulation (if using cocotb)
+-   **GTKWave** - For viewing waveforms (optional)
+-   **KLayout** - For viewing GDSII layouts (optional)
 
 **For Full PPA Analysis:**
-- OpenLANE installation (tested with v1.0.2)
-- PDK (default: `~/.ciel/sky130A`)
+
+-   OpenLANE installation (tested with v1.0.2)
+-   PDK (default: `~/.ciel/sky130A`)
 
 ### Setup
 
@@ -139,9 +143,9 @@ dp-1/
 
 ## Documentation
 
-- **[SYNTHESIS_AND_PPA_ANALYSIS.md](docs/SYNTHESIS_AND_PPA_ANALYSIS.md)** - Complete synthesis and PPA workflow guide
-- **AI-HDL Documentation** - See `docs/` in repository root
-- **Submission Package** - See `submissions/` folder for deliverables structure
+-   **[SYNTHESIS_AND_PPA_ANALYSIS.md](docs/SYNTHESIS_AND_PPA_ANALYSIS.md)** - Complete synthesis and PPA workflow guide
+-   **AI-HDL Documentation** - See `docs/` in repository root
+-   **Submission Package** - See `submissions/` folder for deliverables structure
 
 ## Development Workflow
 
@@ -154,48 +158,50 @@ dp-1/
 
 ## Key Files to Modify
 
-- `peripheral/src/peripheral.v` - UART peripheral implementation
-- `peripheral/test/test.py` - UART testbench (optional)
-- Update `tt_wrapper.v` line 41 if changing module name from `tqvp_example`
+-   `peripheral/src/peripheral.v` - UART peripheral implementation
+-   `peripheral/test/test.py` - UART testbench (optional)
+-   Update `tt_wrapper.v` line 41 if changing module name from `tqvp_example`
 
 ## Deliverables (DP#1)
 
-- [ ] Synthesizable UART peripheral RTL
-- [ ] Passing testbenches
-- [ ] Baseline synthesis report (from Yosys)
-- [ ] Baseline PPA report (from OpenLANE)
-- [ ] LLM prompt logs
-- [ ] Design documentation
-- [ ] Git tag: `DP1-Submission`
+-   [ ] Synthesizable UART peripheral RTL
+-   [ ] Passing testbenches
+-   [ ] Baseline synthesis report (from Yosys)
+-   [ ] Baseline PPA report (from OpenLANE)
+-   [ ] LLM prompt logs
+-   [ ] Design documentation
+-   [ ] Git tag: `DP1-Submission`
 
 ## Important Notes
 
 ### For AI-HDL Competition
-- **Top module**: `tt_um_tqv_peripheral_harness` (from tt_wrapper.v)
-- **Interface**: 32-bit register-based (address, data_in, data_out, data_write_n, data_read_n)
-- **UART pins**: `ui_in[7]` (RX), `uo_out[0]` (TX)
-- **Interrupt**: `user_interrupt` signal for RX ready
+
+-   **Top module**: `tt_um_tqv_peripheral_harness` (from tt_wrapper.v)
+-   **Interface**: 32-bit register-based (address, data_in, data_out, data_write_n, data_read_n)
+-   **UART pins**: `ui_in[7]` (RX), `uo_out[0]` (TX)
+-   **Interrupt**: `user_interrupt` signal for RX ready
 
 ### Synthesis Approach
-- Scripts handle flat directory structure automatically
-- All 19 source files included (CPU + peripheral + test harness)
-- Temporary files auto-cleaned after synthesis
+
+-   Scripts handle flat directory structure automatically
+-   All 19 source files included (CPU + peripheral + test harness)
+-   Temporary files auto-cleaned after synthesis
 
 ## Team Members
 
-- [Add team member names]
+-   [Add team member names]
 
 ## Timeline
 
-- **Phase Start**: January 15, 2026
-- **Milestone Review (MR#1)**: January 29, 2026
-- **Submission Deadline**: January 28, 2026
+-   **Phase Start**: January 15, 2026
+-   **Milestone Review (MR#1)**: January 29, 2026
+-   **Submission Deadline**: January 28, 2026
 
 ## Resources
 
-- AI-HDL Website: https://csm.arizona.edu/AIHDL
-- TinyQV Core: https://github.com/TinyTapeout/ttsky25a-tinyQV
-- Peripheral Template: https://github.com/TinyTapeout/tinyqv-full-peripheral-template
+-   AI-HDL Website: https://csm.arizona.edu/AIHDL
+-   TinyQV Core: https://github.com/TinyTapeout/ttsky25a-tinyQV
+-   Peripheral Template: https://github.com/TinyTapeout/tinyqv-full-peripheral-template
 
 ---
 
