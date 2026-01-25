@@ -3,8 +3,6 @@
 // Description: AES S-Box (SubBytes) Transformation
 //              256-entry ROM lookup table for byte substitution
 //              Provides both forward S-Box (encryption) and inverse (decryption)
-// Author: AI-HDL 2026
-// Date: January 25, 2026
 // =============================================================================
 
 module aes_sbox (

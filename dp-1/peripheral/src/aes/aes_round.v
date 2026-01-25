@@ -3,8 +3,6 @@
 // Description: AES Round Function
 //              Integrates SubBytes → ShiftRows → MixColumns → AddRoundKey
 //              Supports both regular rounds (1-9) and final round (10, no MixColumns)
-// Author: AI-HDL 2026
-// Date: January 25, 2026
 // =============================================================================
 
 module aes_round (

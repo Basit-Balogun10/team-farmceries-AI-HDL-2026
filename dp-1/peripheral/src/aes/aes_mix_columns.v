@@ -3,8 +3,6 @@
 // Description: AES MixColumns Transformation
 //              Matrix multiplication in GF(2^8) Galois Field
 //              Each column is multiplied by fixed matrix using xtime operation
-// Author: AI-HDL 2026
-// Date: January 25, 2026
 // =============================================================================
 
 module aes_mix_columns (

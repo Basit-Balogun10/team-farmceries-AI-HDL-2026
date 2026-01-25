@@ -3,8 +3,6 @@
 // Description: AES-128 Key Expansion Module
 //              Generates 11 round keys (K0-K10) from 128-bit master key
 //              Uses SubWord, RotWord, and Rcon operations
-// Author: AI-HDL 2026
-// Date: January 25, 2026
 // =============================================================================
 
 module aes_key_expansion (

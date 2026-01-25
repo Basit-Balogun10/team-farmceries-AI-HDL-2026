@@ -3,8 +3,6 @@
 // Description: AES AddRoundKey Transformation
 //              XOR state with round key (128-bit XOR operation)
 //              Same operation for both encryption and decryption
-// Author: AI-HDL 2026
-// Date: January 25, 2026
 // =============================================================================
 
 module aes_add_round_key (

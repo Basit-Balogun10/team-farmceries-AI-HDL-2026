@@ -8,8 +8,6 @@
 //                0x08-0x0B: KEY0-KEY3 - 128-bit encryption key (4x32-bit)
 //                0x0C: TX_COUNT - TX buffer byte count
 //                0x10: RX_COUNT - RX buffer byte count
-// Author: AI-HDL 2026
-// Date: January 25, 2026
 // =============================================================================
 
 module aes_register_interface (

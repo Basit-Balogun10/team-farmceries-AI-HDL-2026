@@ -3,8 +3,6 @@
 // Description: AES-128 Core Encryption/Decryption Engine
 //              Control FSM managing 10-round AES encryption
 //              States: IDLE → LOAD → KEY_EXP → INIT_RK → ROUND_1-10 → DONE
-// Author: AI-HDL 2026
-// Date: January 25, 2026
 // =============================================================================
 
 module aes_core (
@@ -48,8 +46,10 @@ module aes_core (
     
     // Round function signals
     wire [127:0] round_out;
+    wire [127:0] inv_round_out;
     wire         is_final_round;
     wire [127:0] current_round_key;
+    wire [3:0]   decrypt_round_idx;  // Reverse key index for decryption
 
     // Key expansion module instantiation
     aes_key_expansion key_exp_inst (
@@ -65,14 +65,26 @@ module aes_core (
 
     // Round function instantiation
     assign is_final_round = (state == ROUND_10);
-    assign current_round_key = round_keys[round_cnt];
+    
+    // For decryption, use keys in reverse order: K9, K8, ..., K1, K0
+    assign decrypt_round_idx = 4'd10 - round_cnt;
+    assign current_round_key = mode ? round_keys[decrypt_round_idx] : round_keys[round_cnt];
 
+    // Forward (encryption) round
     aes_round round_inst (
         .state_in(state_reg),
         .round_key(current_round_key),
         .is_final_round(is_final_round),
-        .inverse(mode),
+        .inverse(1'b0),
         .state_out(round_out)
+    );
+
+    // Inverse (decryption) round
+    aes_inv_round inv_round_inst (
+        .state_in(state_reg),
+        .round_key(current_round_key),
+        .final_round(is_final_round),
+        .state_out(inv_round_out)
     );
 
     // State transition
@@ -150,15 +162,20 @@ module aes_core (
                 end
                 
                 INIT_RK: begin
-                    // Initial AddRoundKey with K0
-                    state_reg <= state_reg ^ round_keys[0];
+                    // Initial AddRoundKey
+                    // Encryption: XOR with K0
+                    // Decryption: XOR with K10
+                    if (mode)
+                        state_reg <= state_reg ^ round_keys[10];  // Decrypt starts with K10
+                    else
+                        state_reg <= state_reg ^ round_keys[0];   // Encrypt starts with K0
                     round_cnt <= 4'd1;
                 end
                 
                 ROUND_1, ROUND_2, ROUND_3, ROUND_4, ROUND_5,
                 ROUND_6, ROUND_7, ROUND_8, ROUND_9, ROUND_10: begin
-                    // Execute round transformation
-                    state_reg <= round_out;
+                    // Execute round transformation (forward or inverse)
+                    state_reg <= mode ? inv_round_out : round_out;
                     round_cnt <= round_cnt + 1;
                 end
                 

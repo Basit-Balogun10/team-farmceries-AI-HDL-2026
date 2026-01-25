@@ -3,8 +3,6 @@
 // Description: AES-UART Integration Controller
 //              Manages AES encryption/decryption for UART TX/RX data paths
 //              Buffers 16 bytes, triggers AES operations, interfaces with registers
-// Author: AI-HDL 2026
-// Date: January 25, 2026
 // =============================================================================
 
 module aes_uart_controller (
@@ -83,7 +81,7 @@ module aes_uart_controller (
         .clk(clk),
         .rst_n(rst_n),
         .start(aes_rx_start),
-        .mode(1'b0),                // Still use encrypt mode (AES decryption uses encrypt with reversed key schedule)
+        .mode(1'b1),                // Decrypt mode
         .plaintext(rx_ciphertext_buffer),
         .key(aes_key),
         .ciphertext(aes_rx_plaintext),

@@ -3,8 +3,6 @@
 // Description: AES ShiftRows Transformation
 //              Cyclically shifts bytes in each row of the state matrix
 //              Row 0: no shift, Row 1: left 1, Row 2: left 2, Row 3: left 3
-// Author: AI-HDL 2026
-// Date: January 25, 2026
 // =============================================================================
 
 module aes_shift_rows (

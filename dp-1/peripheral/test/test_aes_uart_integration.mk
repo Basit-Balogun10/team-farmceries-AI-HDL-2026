@@ -10,6 +10,7 @@ VERILOG_SOURCES = $(PWD)/../src/aes/aes_sbox.v \
                   $(PWD)/../src/aes/aes_add_round_key.v \
                   $(PWD)/../src/aes/aes_key_expansion.v \
                   $(PWD)/../src/aes/aes_round.v \
+                  $(PWD)/../src/aes/aes_inv_round.v \
                   $(PWD)/../src/aes/aes_core.v \
                   $(PWD)/../src/aes/aes_uart_controller.v
 
