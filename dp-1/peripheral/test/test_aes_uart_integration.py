@@ -4,11 +4,13 @@ Tests the complete AES encryption/decryption flow with UART data paths
 """
 
 import cocotb
-from cocotb.triggers import Timer, RisingEdge
+from cocotb.triggers import Timer, RisingEdge, ClockCycles
 from cocotb.clock import Clock
+import random
 
 # Test vectors
 TEST_KEY = 0x000102030405060708090a0b0c0d0e0f
+ALT_KEY = 0x2b7e151628aed2a6abf7158809cf4f3c  # Different key for key-switching tests
 
 # 16-byte plaintext message
 TEST_PLAINTEXT_BYTES = [
@@ -18,6 +20,22 @@ TEST_PLAINTEXT_BYTES = [
 
 # Expected ciphertext (from NIST vectors)
 EXPECTED_CIPHERTEXT = 0x69c4e0d86a7b0430d8cdb78070b4c55a
+
+# Known NIST test vectors
+NIST_VECTORS = [
+    {
+        'key': 0x000102030405060708090a0b0c0d0e0f,
+        'plaintext': [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                     0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff],
+        'ciphertext': 0x69c4e0d86a7b0430d8cdb78070b4c55a
+    },
+    {
+        'key': 0x2b7e151628aed2a6abf7158809cf4f3c,
+        'plaintext': [0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d,
+                     0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34],
+        'ciphertext': 0x3925841d02dc09fbdc118597196a0b32
+    }
+]
 
 @cocotb.test()
 async def test_tx_encryption(dut):
@@ -74,11 +92,7 @@ async def test_tx_encryption(dut):
 
 @cocotb.test()
 async def test_rx_decryption(dut):
-    """Test RX path: demonstrates buffering (decryption requires inverse transforms)"""
-    
-    # Note: Full AES decryption requires InvSubBytes, InvShiftRows, InvMixColumns
-    # This test verifies the RX buffering and state machine work correctly
-    # The decrypt functionality would require implementing the inverse transformations
+    """Test RX path: ciphertext bytes -> decrypted plaintext"""
     
     # Setup clock
     clock = Clock(dut.clk, 10, units="ns")
@@ -104,7 +118,7 @@ async def test_rx_decryption(dut):
         ciphertext_bytes.append(byte_val)
     
     # Send 16 ciphertext bytes to RX path
-    dut._log.info("Sending 16 ciphertext bytes to RX buffer...")
+    dut._log.info("Sending 16 ciphertext bytes to RX for decryption...")
     for i, byte_val in enumerate(ciphertext_bytes):
         dut.rx_data_in.value = byte_val
         dut.rx_data_valid.value = 1
@@ -114,18 +128,27 @@ async def test_rx_decryption(dut):
         if i < 15:
             await RisingEdge(dut.clk)
     
-    # Wait for processing to complete
-    dut._log.info("Waiting for RX processing...")
+    # Wait for decryption to complete
+    dut._log.info("Waiting for RX decryption...")
     timeout = 0
     while dut.rx_block_valid.value == 0:
         await RisingEdge(dut.clk)
         timeout += 1
         if timeout > 100:
-            assert False, "RX processing timeout"
+            assert False, "RX decryption timeout"
     
-    # Verify block was processed (buffering works)
-    dut._log.info(f"✓ RX buffering successful - 16 bytes processed")
-    dut._log.info("Note: Full decryption requires implementing InvSubBytes, InvShiftRows, InvMixColumns")
+    # Verify decrypted plaintext matches original
+    actual_plaintext = dut.rx_block_out.value.integer
+    expected_plaintext = int.from_bytes(TEST_PLAINTEXT_BYTES, 'big')
+    
+    dut._log.info(f"Ciphertext: 0x{EXPECTED_CIPHERTEXT:032x}")
+    dut._log.info(f"Plaintext:  0x{actual_plaintext:032x}")
+    dut._log.info(f"Expected:   0x{expected_plaintext:032x}")
+    
+    assert actual_plaintext == expected_plaintext, \
+        f"RX decryption failed: got 0x{actual_plaintext:032x}, expected 0x{expected_plaintext:032x}"
+    
+    dut._log.info("✓ RX decryption successful - ciphertext correctly decrypted to plaintext")
 
 @cocotb.test()
 async def test_full_duplex_encryption(dut):
