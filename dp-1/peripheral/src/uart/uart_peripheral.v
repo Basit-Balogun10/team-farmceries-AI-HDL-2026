@@ -1,16 +1,21 @@
 `default_nettype none
 
 /**
- * UART Peripheral Top Module
+ * UART Peripheral with FIFOs and Flow Control
  * 
- * Complete UART peripheral integrating all sub-modules:
+ * Complete UART peripheral integrating:
  * - Baud rate generator
- * - UART transmitter
+ * - UART transmitter with CTS flow control
  * - UART receiver
+ * - TX and RX FIFO buffers (16 bytes each)
+ * - RTS generation for RX flow control
  * - Memory-mapped register interface
  * 
- * Interfaces with TinyQV RISC-V core via memory-mapped I/O.
- * UART TX on uo_out[0], RX on ui_in[7] (standard TinyQV UART pins)
+ * Features:
+ * - 16-byte TX FIFO for burst writes
+ * - 16-byte RX FIFO with watermark detection
+ * - Hardware flow control (RTS/CTS)
+ * - Configurable flow control enable
  */
 module uart_peripheral (
     input  wire        clk,          // System clock (70 MHz)
@@ -24,9 +29,13 @@ module uart_peripheral (
     output wire [31:0] data_out,     // Read data
     output wire        data_ready,   // Read data valid
     
-    // UART Physical Interface (connects to ui_in/uo_out in tt_wrapper)
-    input  wire        uart_rx,      // UART RX input (from ui_in[7])
-    output wire        uart_tx,      // UART TX output (to uo_out[0])
+    // UART Physical Interface
+    input  wire        uart_rx,      // UART RX input
+    output wire        uart_tx,      // UART TX output
+    
+    // Flow Control Signals
+    input  wire        cts_n,        // Clear To Send input (active low)
+    output wire        rts_n,        // Request To Send output (active low)
     
     // Interrupt output
     output wire        uart_interrupt
@@ -35,51 +44,149 @@ module uart_peripheral (
     // Internal signals
     wire [3:0] baud_sel;
     wire       baud_tick;
-    wire       flow_ctrl_en;  // Not used in basic peripheral
+    wire       flow_ctrl_en;
     
-    // TX signals
-    wire [7:0] tx_data;
-    wire       tx_start;
-    wire       tx_busy;
+    // TX path signals
+    wire [7:0] tx_data_from_reg;
+    wire       tx_start_from_reg;
+    wire       tx_busy_to_reg;
     
-    // RX signals
-    wire [7:0] rx_data;
-    wire       rx_ready;
-    wire       rx_error;
-    wire       rx_data_read;  // Not used in basic peripheral (no FIFO)
+    // TX FIFO signals
+    wire [7:0] tx_fifo_data;
+    wire       tx_fifo_wr_en;
+    wire       tx_fifo_rd_en;
+    wire       tx_fifo_full;
+    wire       tx_fifo_empty;
+    wire [4:0] tx_fifo_count;
     
-    // Instantiate baud rate generator
+    // TX control signals
+    wire [7:0] tx_data_to_uart;
+    wire       tx_start_to_uart;
+    wire       tx_busy_from_uart;
+    
+    // RX path signals
+    wire [7:0] rx_data_from_uart;
+    wire       rx_ready_from_uart;
+    wire       rx_error_from_uart;
+    
+    // RX FIFO signals
+    wire [7:0] rx_fifo_data;
+    wire       rx_fifo_wr_en;
+    wire       rx_fifo_rd_en;
+    wire       rx_fifo_full;
+    wire       rx_fifo_empty;
+    wire       rx_fifo_watermark;
+    wire [4:0] rx_fifo_count;
+    
+    // RX signals to register interface
+    wire [7:0] rx_data_to_reg;
+    wire       rx_ready_to_reg;
+    wire       rx_data_read;  // Pulse from register interface when CPU reads
+    
+    //=========================================================================
+    // Baud Rate Generator
+    //=========================================================================
     uart_baud_generator baud_gen (
         .clk(clk),
         .rst_n(rst_n),
         .baud_sel(baud_sel),
-        .enable(1'b1),           // Always enabled
+        .enable(1'b1),
         .baud_tick(baud_tick)
     );
     
-    // Instantiate UART transmitter
-    uart_tx transmitter (
+    //=========================================================================
+    // TX Path: Register -> TX FIFO -> UART TX with Flow Control
+    //=========================================================================
+    
+    // TX FIFO: Buffers data from CPU writes
+    uart_fifo #(
+        .DEPTH(16),
+        .DATA_WIDTH(8),
+        .WATERMARK(14)
+    ) tx_fifo (
+        .clk(clk),
+        .rst_n(rst_n),
+        .wr_data(tx_data_from_reg),
+        .wr_en(tx_start_from_reg && !tx_fifo_full),  // Write when CPU writes TX_DATA
+        .rd_data(tx_data_to_uart),
+        .rd_en(tx_fifo_rd_en),
+        .full(tx_fifo_full),
+        .empty(tx_fifo_empty),
+        .watermark(),  // Not used for TX FIFO
+        .count(tx_fifo_count)
+    );
+    
+    // TX FIFO read control: Read when UART is idle and FIFO has data
+    assign tx_fifo_rd_en = !tx_busy_from_uart && !tx_fifo_empty;
+    assign tx_start_to_uart = tx_fifo_rd_en;  // Start TX when reading from FIFO
+    
+    // Report busy to register interface if FIFO has data or UART is busy
+    assign tx_busy_to_reg = !tx_fifo_empty || tx_busy_from_uart;
+    
+    // UART Transmitter with Flow Control
+    uart_tx_flow transmitter (
         .clk(clk),
         .rst_n(rst_n),
         .baud_tick(baud_tick),
-        .tx_data(tx_data),
-        .tx_start(tx_start),
+        .tx_data(tx_data_to_uart),
+        .tx_start(tx_start_to_uart),
+        .cts_n(cts_n),
+        .flow_ctrl_en(flow_ctrl_en),
         .tx_out(uart_tx),
-        .tx_busy(tx_busy)
+        .tx_busy(tx_busy_from_uart)
     );
     
-    // Instantiate UART receiver
+    //=========================================================================
+    // RX Path: UART RX -> RX FIFO -> Register Interface
+    //=========================================================================
+    
+    // UART Receiver
     uart_rx receiver (
         .clk(clk),
         .rst_n(rst_n),
         .rx_in(uart_rx),
         .baud_tick(baud_tick),
-        .rx_data(rx_data),
-        .rx_ready(rx_ready),
-        .rx_error(rx_error)
+        .rx_data(rx_data_from_uart),
+        .rx_ready(rx_ready_from_uart),
+        .rx_error(rx_error_from_uart)
     );
     
-    // Instantiate register interface
+    // RX FIFO: Buffers received data
+    uart_fifo #(
+        .DEPTH(16),
+        .DATA_WIDTH(8),
+        .WATERMARK(14)
+    ) rx_fifo (
+        .clk(clk),
+        .rst_n(rst_n),
+        .wr_data(rx_data_from_uart),
+        .wr_en(rx_ready_from_uart && !rx_fifo_full),  // Write when byte received
+        .rd_data(rx_data_to_reg),
+        .rd_en(rx_fifo_rd_en),
+        .full(rx_fifo_full),
+        .empty(rx_fifo_empty),
+        .watermark(rx_fifo_watermark),
+        .count(rx_fifo_count)
+    );
+    
+    // RX FIFO read control: Read when CPU reads RX_DATA register
+    assign rx_ready_to_reg = !rx_fifo_empty;
+    assign rx_fifo_rd_en = rx_data_read && !rx_fifo_empty;
+    
+    //=========================================================================
+    // RTS Generation
+    //=========================================================================
+    uart_rts_gen rts_generator (
+        .clk(clk),
+        .rst_n(rst_n),
+        .rx_fifo_watermark(rx_fifo_watermark),
+        .flow_ctrl_en(flow_ctrl_en),
+        .rts_n(rts_n)
+    );
+    
+    //=========================================================================
+    // Register Interface
+    //=========================================================================
     uart_register_interface reg_interface (
         .clk(clk),
         .rst_n(rst_n),
@@ -93,19 +200,19 @@ module uart_peripheral (
         .data_ready(data_ready),
         
         // TX interface
-        .tx_data(tx_data),
-        .tx_start(tx_start),
-        .tx_busy(tx_busy),
+        .tx_data(tx_data_from_reg),
+        .tx_start(tx_start_from_reg),
+        .tx_busy(tx_busy_to_reg),
         
         // RX interface
-        .rx_data(rx_data),
-        .rx_ready(rx_ready),
-        .rx_error(rx_error),
-        .rx_data_read(rx_data_read),  // Output (unused in basic peripheral)
+        .rx_data(rx_data_to_reg),
+        .rx_ready(rx_ready_to_reg),
+        .rx_error(rx_error_from_uart),  // Error signal directly from UART
+        .rx_data_read(rx_data_read),     // Output: pulse when CPU reads RX_DATA
         
         // Configuration
         .baud_sel(baud_sel),
-        .flow_ctrl_en(flow_ctrl_en),  // Output (unused in basic peripheral)
+        .flow_ctrl_en(flow_ctrl_en),
         
         // Interrupt
         .uart_interrupt(uart_interrupt)
