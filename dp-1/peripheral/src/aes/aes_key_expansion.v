@@ -11,8 +11,13 @@ module aes_key_expansion (
     input  wire         start,          // Start key expansion
     input  wire [127:0] master_key,     // Input 128-bit key
     output reg          done,           // Key expansion complete
-    output reg  [127:0] round_keys [0:10] // 11 round keys (K0-K10)
+    // Flattened round keys for synthesis compatibility (11 keys × 128 bits = 1408 bits)
+    // round_keys[1407:1280] = K10, round_keys[1279:1152] = K9, ..., round_keys[127:0] = K0
+    output reg  [1407:0] round_keys_flat
 );
+
+    // Internal unpacked array for easier logic (will be packed into output)
+    reg [127:0] round_keys [0:10]; // 11 round keys (K0-K10)
 
     // Round constants for AES-128
     function [7:0] rcon;
@@ -209,6 +214,14 @@ module aes_key_expansion (
                     round_cnt <= 0;
                 end
             endcase
+        end
+    end
+
+    // Pack internal unpacked array into flat output for synthesis compatibility
+    always @(*) begin : pack_round_keys
+        integer i;
+        for (i = 0; i < 11; i = i + 1) begin
+            round_keys_flat[i*128 +: 128] = round_keys[i];
         end
     end
 

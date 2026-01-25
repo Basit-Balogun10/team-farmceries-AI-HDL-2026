@@ -42,7 +42,8 @@ module aes_core (
     // Key expansion signals
     wire        key_exp_start;
     wire        key_exp_done;
-    wire [127:0] key_exp_round_keys [0:10];
+    wire [1407:0] key_exp_round_keys_flat;  // Flat packed array (11 × 128 = 1408 bits)
+    reg [127:0] key_exp_round_keys [0:10];  // Unpacked for easier use
     
     // Round function signals
     wire [127:0] round_out;
@@ -58,8 +59,16 @@ module aes_core (
         .start(key_exp_start),
         .master_key(key),
         .done(key_exp_done),
-        .round_keys(key_exp_round_keys)
+        .round_keys_flat(key_exp_round_keys_flat)
     );
+
+    // Unpack flat array into unpacked array for easier indexing
+    always @(*) begin : unpack_round_keys
+        integer i;
+        for (i = 0; i < 11; i = i + 1) begin
+            key_exp_round_keys[i] = key_exp_round_keys_flat[i*128 +: 128];
+        end
+    end
 
     assign key_exp_start = (state == KEY_EXP);
 

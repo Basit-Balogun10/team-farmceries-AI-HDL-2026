@@ -114,7 +114,8 @@ Building upon the basic UART with hardware-accelerated encryption for secure emb
 ✅ **Full-duplex** simultaneous TX encrypt + RX decrypt  
 ✅ **0.01% overhead** (AES 8800× faster than UART bottleneck)  
 ✅ **Transparent operation** (zero software crypto code needed)  
-🔄 **Synthesis pending** (final area/power/timing metrics)
+✅ **53,221 total cells** (9,822 flip-flops, 18,519 muxes, logic gates)  
+✅ **43,008 wires** (85,147 wire bits)
 
 ## AI Collaboration
 

@@ -20,6 +20,7 @@ Team implementation of a **Secure UART peripheral** with FIFOs, flow control, an
 -   **18/18 tests passing** (13 component + 5 system tests)
 -   **Performance**: 0.01% overhead (AES is 8800× faster than UART!)
 -   **Security**: AES-128 with 340 undecillion possible keys
+-   **Synthesis**: 53,221 cells (9,822 flip-flops, 18,519 muxes, 43,008 wires)
 
 **Design Context**: While industry typically uses WiFi/TLS or software AES for secure communication, our hardware-accelerated AES-UART demonstrates transparent encryption in dedicated circuits - valuable for learning FPGA design patterns and understanding hardware/software integration. See [SECURE_UART_FUNDAMENTALS.md](docs/secure-uart/SECURE_UART_FUNDAMENTALS.md#why-isnt-secure-being-done-this-way) for detailed industry comparison.
 
