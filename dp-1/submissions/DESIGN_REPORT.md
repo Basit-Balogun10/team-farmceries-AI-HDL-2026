@@ -1,21 +1,32 @@
 # UART Peripheral Design Report
 
 **Team**: Farmceries  
-**Design Phase**: 1  
-**Peripheral**: UART (Universal Asynchronous Receiver/Transmitter)  
+**Design Phases**: 1 & 2  
+**Peripheral**: UART with AES-128 Encryption Enhancement  
 **Date**: January 2026
 
 ---
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Design Specification](#design-specification)
-3. [Architecture](#architecture)
-4. [Implementation Details](#implementation-details)
-5. [Design Decisions](#design-decisions)
-6. [Challenges & Solutions](#challenges--solutions)
-7. [Future Improvements](#future-improvements)
+### Phase 1: Basic UART
+1. [Introduction](#1-introduction)
+2. [Design Specification](#2-design-specification)
+3. [Architecture](#3-architecture)
+4. [Implementation Details](#4-implementation-details)
+5. [Design Decisions](#5-design-decisions)
+6. [Challenges & Solutions](#6-challenges--solutions)
+
+### Phase 2: Secure UART Enhancement
+8. [Phase 2: AES-128 Integration](#8-phase-2-aes-128-integration)
+9. [Secure UART Architecture](#9-secure-uart-architecture)
+10. [AES Implementation](#10-aes-implementation)
+11. [Integration & Testing](#11-integration--testing)
+12. [Synthesis Results](#12-synthesis-results)
+
+### Appendices
+13. [Future Improvements](#13-future-improvements)
+14. [Appendices](#appendices)
 
 ---
 
@@ -560,7 +571,306 @@ Copilot:
 
 ---
 
-## 7. Future Improvements (DP#2 Ideas)
+## 8. Phase 2: AES-128 Integration
+
+### Overview
+
+Following the successful completion of Phase 1 (basic UART peripheral), Phase 2 enhanced the design with **hardware-accelerated AES-128 encryption**. This creates a "Secure UART" peripheral that transparently encrypts transmitted data and decrypts received data without requiring any changes to CPU software.
+
+**Key Achievement**: Integration of cryptographic hardware acceleration with UART communication, demonstrating advanced RTL design patterns including:
+- Dual-core AES architecture (independent TX/RX encryption engines)
+- Streaming data path design for continuous operation
+- Register-based AES key management
+- Transparent bypass mode for backwards compatibility
+
+### Motivation
+
+While hardware AES-UART integration isn't industry-standard practice (real-world systems typically use WiFi+TLS, software AES, or dedicated crypto chips), this implementation serves as an **educational platform** to learn:
+- Complex state machine design across multiple clock domains
+- Hardware/software interface patterns for crypto accelerators
+- Performance optimization in resource-constrained environments
+- Verification strategies for security-critical hardware
+
+See [SECURE_UART_FUNDAMENTALS.md](../docs/secure-uart/SECURE_UART_FUNDAMENTALS.md) for detailed industry context.
+
+### Implementation Timeline
+
+| Phase | Duration | Activity |
+|-------|----------|----------|
+| Days 1-2 | Jan 21-22 | AES theory research, algorithm documentation |
+| Days 3-4 | Jan 23-24 | AES core implementation (encrypt/decrypt with full test suite) |
+| Day 5 | Jan 24 | Integration controller: AES-UART streaming logic |
+| Day 6 | Jan 25 | System integration, comprehensive testing (18/18 passing) |
+| Day 7 | Jan 25 | Documentation (8 files, 2000+ lines), synthesis |
+
+---
+
+## 9. Secure UART Architecture
+
+### Top-Level Block Diagram
+
+```
+                      ┌─────────────────────────────────────────────┐
+                      │     secure_uart_peripheral Module           │
+                      │                                             │
+                      │  ┌──────────────────────────────────────┐  │
+    CPU Bus ─────────▶│  │  Register Interface (Extended)       │  │
+    (Read/Write)      │  │  - Standard UART registers (Phase 1) │  │
+                      │  │  - AES key registers (4x 32-bit)     │  │
+                      │  │  - AES control/status registers      │  │
+                      │  └───────────┬──────────────────────────┘  │
+                      │              │                              │
+                      │              ├────TX Path───────────────┐   │
+                      │              │                          │   │
+                      │  ┌───────────▼──────────┐  ┌──────────▼──┐ │
+                      │  │ AES-UART Controller  │  │   AES Core  │ │
+                      │  │  (TX Streaming)      │──│  (Encrypt)  │ │
+    TX Pin ◀──────────│  │  - Mode: AES/Plain   │  │  11 cycles  │ │
+                      │  │  - Byte-to-block     │  └─────────────┘ │
+                      │  └──────────────────────┘                  │
+                      │              │                              │
+                      │              ├────RX Path───────────────┐   │
+                      │              │                          │   │
+                      │  ┌───────────▼──────────┐  ┌──────────▼──┐ │
+    RX Pin ──────────▶│  │ AES-UART Controller  │  │   AES Core  │ │
+                      │  │  (RX Streaming)      │──│  (Decrypt)  │ │
+                      │  │  - Block assembly    │  │  11 cycles  │ │
+                      │  │  - Decryption trigger│  └─────────────┘ │
+                      │  └──────────────────────┘                  │
+                      │              │                              │
+                      │  ┌───────────▼──────────────┐               │
+                      │  │   UART Peripheral        │               │
+                      │  │   (Phase 1 - unchanged)  │               │
+                      │  └──────────────────────────┘               │
+                      │                                             │
+                      └─────────────────────────────────────────────┘
+```
+
+### Data Flow
+
+**TX Path (CPU → Encrypted Wire):**
+1. CPU writes byte to TX_DATA register
+2. AES-UART controller buffers 16 bytes (one AES block)
+3. When block ready, triggers AES encryption (11 cycles @ 70MHz)
+4. Encrypted bytes streamed to UART TX one at a time
+5. TX continues transmitting while next block encrypts (pipelined)
+
+**RX Path (Encrypted Wire → CPU):**
+1. UART RX receives encrypted byte from wire
+2. AES-UART controller assembles 16 bytes into block
+3. Triggers AES decryption (11 cycles)
+4. Decrypted bytes presented to CPU one at a time via RX_DATA
+5. Transparent to software - appears as normal UART reads
+
+### Key Features
+
+- **Dual AES Cores**: Independent TX/RX encryption engines for full-duplex operation
+- **Transparent Encryption**: Zero changes needed to CPU software
+- **Bypass Mode**: Optional plaintext mode (CTRL[6] = 0 disables AES)
+- **128-bit Key**: Configurable via 4× 32-bit registers (0x20-0x2C)
+- **Performance**: AES overhead is 0.01% (encryption 8800× faster than UART bottleneck)
+
+---
+
+## 10. AES Implementation
+
+### AES Core Architecture
+
+The AES-128 implementation follows the Rijndael cipher specification with support for both encryption and decryption:
+
+```verilog
+module aes_core (
+    input  wire         clk,
+    input  wire         rst_n,
+    input  wire         start,
+    input  wire         mode,           // 0=encrypt, 1=decrypt
+    input  wire [127:0] data_in,        // 128-bit plaintext/ciphertext
+    input  wire [127:0] key,            // 128-bit key
+    output reg  [127:0] data_out,       // 128-bit output
+    output reg          done
+);
+```
+
+**Pipeline Structure:**
+1. **Key Expansion** (1 cycle): Generate 11 round keys from master key
+2. **Initial Round** (1 cycle): AddRoundKey with K0
+3. **Main Rounds 1-9** (9 cycles): SubBytes → ShiftRows → MixColumns → AddRoundKey
+4. **Final Round 10** (1 cycle): SubBytes → ShiftRows → AddRoundKey (no MixColumns)
+
+**Total Latency**: 11 clock cycles @ 70MHz = **157 nanoseconds per block**
+
+### AES Submodules
+
+| Module | Function | Implementation |
+|--------|----------|----------------|
+| `aes_sbox` | SubBytes transformation | 256-entry lookup table (forward/inverse) |
+| `aes_shift_rows` | Row permutation | Combinational wire shuffling |
+| `aes_mix_columns` | Column mixing (Galois field) | GF(2⁸) matrix multiplication |
+| `aes_add_round_key` | XOR with round key | 128-bit XOR |
+| `aes_key_expansion` | Generate round keys | Recursive key schedule |
+| `aes_round` | Full encryption round | Composition of above |
+| `aes_inv_round` | Full decryption round | Inverse operations |
+
+### Design Decisions
+
+**Choice: Unrolled vs. Iterative AES**
+- **Selected**: Iterative (one round per cycle)
+- **Rationale**: 
+  - Lower area (reuses round logic 10 times)
+  - 11-cycle latency acceptable for UART bottleneck (115200 bps = 69.4μs/byte)
+  - AES is still 8800× faster than UART transmission
+- **Tradeoff**: Fully unrolled would achieve 1-cycle throughput but consume 10× more area
+
+**Choice: S-Box Implementation**
+- **Selected**: Lookup table (256×8 bits)
+- **Alternative**: Composite field arithmetic
+- **Rationale**: Simpler, faster synthesis, proven correctness
+
+---
+
+## 11. Integration & Testing
+
+### Test Coverage
+
+Phase 2 added **18 new tests** across 3 categories:
+
+| Category | Tests | Description |
+|----------|-------|-------------|
+| **Component Tests** | 13 | Individual AES modules (S-box, shift rows, mix columns, key expansion, full core) |
+| **Integration Tests** | 3 | AES-UART controller (streaming, block assembly) |
+| **System Tests** | 2 | End-to-end encrypted communication (loopback, full peripheral) |
+| **Total** | **18/18** | **100% passing** |
+
+### Verification Strategy
+
+1. **NIST Test Vectors**: AES core verified against official FIPS-197 test vectors
+2. **Known-Answer Tests**: Hardcoded plaintext/ciphertext pairs for each module
+3. **Randomized Testing**: 100 random 128-bit blocks encrypted then decrypted (identity check)
+4. **Loopback Testing**: TX encrypt → wire → RX decrypt = original data
+5. **Waveform Inspection**: GTKWave traces for state machine verification
+
+Example test (from `test_aes_core.py`):
+```python
+@cocotb.test()
+async def test_nist_vector(dut):
+    # NIST FIPS-197 Appendix B example
+    plaintext  = 0x00112233445566778899aabbccddeeff
+    key        = 0x000102030405060708090a0b0c0d0e0f
+    ciphertext = 0x69c4e0d86a7b0430d8cdb78070b4c55a
+    
+    await encrypt_block(dut, plaintext, key)
+    assert dut.data_out.value == ciphertext  # ✓ PASS
+```
+
+### Bug Fixes During Integration
+
+1. **Unpacked Array Synthesis Issue** (Critical)
+   - **Problem**: `aes_key_expansion` used `output reg [127:0] round_keys [0:10]` (unpacked array)
+   - **Impact**: Worked in simulation (cocotb) but failed Yosys synthesis
+   - **Fix**: Refactored to flat packed array `output reg [1407:0] round_keys_flat` with packing/unpacking logic
+   - **Lesson**: Always verify Verilog constructs are synthesis-compatible, not just simulation-compatible
+
+2. **AES-UART State Machine Race**
+   - **Problem**: TX controller triggered encryption before 16th byte fully latched
+   - **Fix**: Added `byte_count == 16` condition with proper edge detection
+
+---
+
+## 12. Synthesis Results
+
+### Metrics (Phase 2: Secure UART)
+
+**Command**: `yosys -s synth_secure_uart.ys` (see `scripts/synth_secure_uart.sh`)
+
+```
+=== secure_uart_peripheral ===
+
+Total Cells:        53,221
+├─ Flip-Flops:       9,822  (18.5%)
+│  ├─ $_DFFE_PN0P_:  6,891  (D flip-flop, posedge clk, negedge rst, enable)
+│  ├─ $_DFFE_PP_:    2,824  (D flip-flop, posedge clk, posedge rst, enable)
+│  ├─ $_DFF_PN0_:       97  (D flip-flop, posedge clk, negedge rst)
+│  ├─ $_DFF_PN1_:        9  (D flip-flop, posedge clk, negedge rst, preset)
+│  └─ $_DFF_P_:          1  (D flip-flop, posedge clk)
+├─ Multiplexers:    18,519  (34.8%)
+└─ Logic Gates:     24,792  (46.6%)
+   ├─ $_ANDNOT_:    10,625  (AND-NOT gate)
+   ├─ $_AND_:          746  (AND gate)
+   ├─ $_OR_:         7,317  (OR gate)
+   ├─ $_XOR_:        1,880  (XOR gate)
+   ├─ $_XNOR_:       1,008  (XNOR gate)
+   ├─ $_NOT_:        1,476  (Inverter)
+   ├─ $_NOR_:          834  (NOR gate)
+   ├─ $_NAND_:         160  (NAND gate)
+   └─ $_ORNOT_:        746  (OR-NOT gate)
+
+Wire Count:         43,008 wires (85,147 wire bits)
+```
+
+### Comparison: Phase 1 vs Phase 2
+
+| Metric | Phase 1 (UART Only) | Phase 2 (Secure UART) | Growth |
+|--------|---------------------|----------------------|--------|
+| **Total Cells** | 852 | 53,221 | **62× larger** |
+| **Flip-Flops** | ~300 | 9,822 | **33× more state** |
+| **Multiplexers** | ~200 | 18,519 | **93× more routing** |
+| **Logic Gates** | ~350 | 24,792 | **71× more logic** |
+| **Wires** | ~600 | 43,008 | **72× more nets** |
+
+**Analysis**: AES encryption added ~62× more hardware, dominated by:
+- S-Box lookup tables (256×8 bits × 2 for forward/inverse)
+- Mix Columns Galois field multipliers
+- Key expansion logic (11 round keys)
+- Dual AES cores (independent TX/RX)
+
+**Performance**: Despite 62× size increase, AES overhead is **0.01%** because UART is the bottleneck:
+- UART @ 115200 bps: 86.8 μs per byte
+- AES @ 70 MHz: 157 ns per 16-byte block = **9.8 ns per byte**
+- **AES is 8800× faster than UART!**
+
+### Area Estimation
+
+Using Sky130 PDK standard cell library estimates:
+- **Phase 1**: 0.018 mm² (measured via OpenLANE)
+- **Phase 2 (projected)**: 0.018 + (62 × 0.018 × 0.3) ≈ **0.35 mm²**
+  - Scaling factor 0.3 accounts for reduced routing complexity in AES (more regular structure than UART)
+
+**Note**: Full place-and-route with OpenLANE will provide accurate area in final submission.
+
+---
+
+## 13. Future Improvements
+
+Based on Phases 1 & 2 implementation, potential enhancements for Design Phase 3:
+
+1. **AES-256 Upgrade**
+   - Increase key size from 128 to 256 bits
+   - 14 rounds instead of 10 (additional 4 cycles latency)
+   - Enhanced security for sensitive applications
+
+2. **Galois Counter Mode (GCM)**
+   - Add authenticated encryption (prevents tampering)
+   - Replaces simple ECB mode used in Phase 2
+   - Industry-standard for TLS/IPsec
+
+3. **DMA Integration**
+   - Bulk transfer support for large encrypted payloads
+   - Reduce CPU overhead to near-zero
+   - Automatic block chaining
+
+4. **Power Optimization**
+   - Clock gating for idle AES cores
+   - Dynamic voltage/frequency scaling based on UART baud rate
+   - Estimated 50-70% power reduction in idle state
+
+5. **FIFO Buffers** (original Phase 2 goal, descoped for time)
+   - 16-entry TX/RX FIFOs
+   - Decouple CPU timing from encryption latency
+   - Enable burst transfers
+
+---
+
+## 7. Future Improvements (DP#1 Archive)
 
 Based on our DP#1 implementation, potential enhancements for Design Phase 2:
 
@@ -610,6 +920,8 @@ Based on our DP#1 implementation, potential enhancements for Design Phase 2:
     - Target: <0.0005µW in sleep mode
 
 ---
+
+## Appendices
 
 ## Appendix A: AI Prompt Examples
 
@@ -664,9 +976,11 @@ See `prompt_logs/` for complete conversation history with GitHub Copilot.
 -   Verilator Linting: https://verilator.org/guide/latest/warnings.html
 -   OpenLANE Documentation: https://openlane.readthedocs.io/
 -   Sky130 PDK: https://skywater-pdk.readthedocs.io/
+-   NIST AES Specification (FIPS-197): https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
+-   AES Rijndael Algorithm: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 
 ---
 
-_Document Version: 1.0_  
-_Last Updated: January 20, 2026_  
+_Document Version: 2.0 (Phase 1 & 2)_  
+_Last Updated: January 25, 2026_  
 _Author: Team Farmceries_

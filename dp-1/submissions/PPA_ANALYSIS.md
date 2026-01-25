@@ -1,14 +1,18 @@
 # PPA Analysis Report - UART Peripheral
 
 **Team**: Farmceries  
-**Design Phase**: 1  
-**Analysis Date**: January 20, 2026
+**Design Phases**: 1 & 2  
+**Analysis Date**: January 20-25, 2026
 
 ---
 
 ## Executive Summary
 
-This document presents the Power, Performance, and Area (PPA) analysis of our UART peripheral implementation.
+This document presents the Power, Performance, and Area (PPA) analysis of our UART peripheral implementation across two design phases:
+- **Phase 1**: Basic UART (baud generator, TX/RX, register interface)
+- **Phase 2**: Secure UART with AES-128 encryption
+
+### Phase 1: Basic UART
 
 **Key Metrics**:
 
@@ -18,7 +22,21 @@ This document presents the Power, Performance, and Area (PPA) analysis of our UA
 
 **Verdict**: **ALL TARGETS EXCEEDED** - Design is production-ready!
 
+### Phase 2: Secure UART with AES-128
+
+**Key Metrics**:
+
+-   **Total Cells**: 53,221 (62× larger than Phase 1)
+-   **Flip-Flops**: 9,822 (state registers for AES rounds)
+-   **Multiplexers**: 18,519 (data routing in encryption pipeline)
+-   **Logic Gates**: 24,792 (S-box lookups, Galois field math)
+-   **Performance**: AES overhead = 0.01% (encryption 8800× faster than UART!)
+
+**Verdict**: **Successful integration** - Transparent hardware encryption with minimal performance impact!
+
 ---
+
+## Part 1: Phase 1 Analysis
 
 ## 1. Area Analysis
 

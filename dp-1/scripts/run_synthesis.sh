@@ -51,6 +51,10 @@ cp peripheral/src/tt_wrapper.v "$WORK_DIR/"
 echo "  - Copying UART peripheral modules..."
 cp peripheral/src/uart/*.v "$WORK_DIR/"
 
+# Copy AES peripheral modules (Phase 2)
+echo "  - Copying AES peripheral modules..."
+cp peripheral/src/aes/*.v "$WORK_DIR/" 2>/dev/null || echo "    (No AES modules found - Phase 1 only)"
+
 # Copy test harness files
 echo "  - Copying test harness files..."
 cp peripheral/src/test_harness/*.sv "$WORK_DIR/"
@@ -93,6 +97,19 @@ read_verilog uart_tx.v
 read_verilog uart_rx.v
 read_verilog uart_register_interface.v
 read_verilog uart_peripheral.v
+
+# 3b. Read AES peripheral modules (Phase 2 - in dependency order)
+read_verilog -defer aes_sbox.v
+read_verilog -defer aes_add_round_key.v
+read_verilog -defer aes_shift_rows.v
+read_verilog -defer aes_mix_columns.v
+read_verilog -defer aes_round.v
+read_verilog -defer aes_inv_round.v
+read_verilog -defer aes_key_expansion.v
+read_verilog -defer aes_core.v
+read_verilog -defer aes_uart_streaming.v
+read_verilog -defer aes_uart_controller.v
+read_verilog -defer secure_uart_peripheral.v
 
 # 4. Read top-level peripheral and wrapper
 read_verilog peripheral.v
