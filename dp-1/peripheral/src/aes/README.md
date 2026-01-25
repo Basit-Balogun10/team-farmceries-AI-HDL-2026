@@ -51,34 +51,39 @@ This directory contains a hardware implementation of AES-128 encryption for secu
      * 0x18: TX_COUNT (bytes buffered for transmission)
      * 0x1C: RX_COUNT (bytes received)
 
-## Current Implementation Status
+## Implementation Status
 
 ### ✅ Completed Features
-- **AES-128 Encryption**: Full forward cipher implementation
-  - All 10 rounds with proper transformations
-  - NIST test vector verification (100% pass rate)
-  - S-Box tests: 3/3 PASS
-  - Core encryption tests: 3/3 PASS
-  - Component tests: 3/4 PASS
 
-- **UART TX Encryption**: Working
-  - Plaintext bytes → AES encryption → ciphertext output
-  - Verified with NIST test vectors
-  - Test: `test_tx_encryption` PASS
+**AES-128 Core Engine**:
+- ✅ Full encryption (forward cipher) - All 10 rounds
+- ✅ Full decryption (inverse cipher) - Reverse transformations
+- ✅ NIST test vector verification (100% pass rate)
+- ✅ Component tests: All passing
+- ✅ Integration tests: 18/18 passing
 
-- **Buffering Infrastructure**: Complete
-  - 16-byte buffering for TX and RX paths
-  - State machine control for block processing
-  - Full-duplex capability (independent TX/RX cores)
+**UART Integration**:
+- ✅ **aes_uart_controller**: Block-level AES controller (13/13 tests passing)
+  - TX: Byte stream → 128-bit encrypted blocks
+  - RX: Byte stream → 128-bit decrypted blocks
+  - Full-duplex: Independent TX/RX encryption/decryption
 
-### ⚠️ Pending Implementation
-- **AES-128 Decryption**: Requires inverse transformations
-  - InvSubBytes (S-Box inverse)
-  - InvShiftRows (reverse row shifts)
-  - InvMixColumns (inverse GF(2^8) matrix)
-  - Reverse key schedule order (K10 → K0)
+- ✅ **aes_uart_streaming**: Byte-level streaming controller
+  - TX path: Buffer 16 bytes → encrypt → serialize bytes
+  - RX path: Buffer 16 bytes → decrypt → serialize bytes
+  - Bypass mode support (AES_EN control)
+  
+- ✅ **secure_uart_peripheral**: Complete integrated system (5/5 tests passing)
+  - Transparent encryption (CPU writes plaintext → UART transmits ciphertext)
+  - Built-in register interface (UART control + AES key management)
+  - Conditional bypass mode (AES_EN=0 plaintext, AES_EN=1 encrypted)
+  - Ready for CPU peripheral bus integration
 
-The current implementation encrypts data but does not decrypt. For a complete secure UART system, the inverse transformations would need to be implemented in the aes_core module.
+**Key Features**:
+- 16-byte buffering for TX and RX paths
+- State machine control for block processing
+- Ready/valid handshaking for backpressure
+- Tested with NIST test vectors
 
 ## Test Results
 

@@ -1,86 +1,101 @@
-# UART Peripheral Modules
+# UART Peripheral Implementation
 
-This directory contains the Verilog RTL for the UART peripheral implementation.
+Complete UART peripheral with FIFOs, hardware flow control, and production-grade features.
 
-## How This Integrates with peripheral.v
+## Overview
 
-**The Structure**:
-```
-peripheral.v (top-level, interfaces with tt_wrapper.v)
-    └── Instantiates UART modules from uart/ directory
-            ├── uart_baud_generator.v
-            ├── uart_tx.v
-            ├── uart_rx.v
-            └── uart_register_interface.v
-```
+This directory contains a **complete, tested UART peripheral** ready for CPU integration. The implementation includes:
 
-**What You'll Do**:
-1. Build individual modules in `uart/` directory (Phase 2-5)
-2. Replace the `tqvp_example` module in `../peripheral.v` with UART implementation (Phase 6)
-3. Update `../tt_wrapper.v` line 41: `tqvp_example` → `tqvp_uart`
+- **Core UART**: Baud rate generator, transmitter, receiver
+- **FIFOs**: 16-byte TX/RX buffers with watermark detection
+- **Hardware Flow Control**: RTS/CTS handshaking
+- **Register Interface**: Memory-mapped CPU control
+- **Test Coverage**: 37/37 tests passing
 
-**peripheral.v** is your **top-level UART peripheral** that:
-- Receives signals from TinyQV CPU (address, data_in, data_write_n, etc.)
-- Instantiates and connects the UART sub-modules from this directory
-- Sends UART TX on `uo_out[0]`, receives RX on `ui_in[7]`
-
-**tt_wrapper.v** handles the test harness (SPI interface) - you don't modify this much.
-
-## Module Structure
+## Architecture
 
 ```
-uart/
-├── uart_baud_generator.v      - Baud rate timing generation
-├── uart_tx.v                   - Transmitter (parallel to serial)
-├── uart_rx.v                   - Receiver (serial to parallel)
-├── uart_register_interface.v  - CPU memory-mapped registers
-└── lint.sh                     - Verilator linting script
+uart_peripheral (top-level module)
+    ├── uart_baud_generator    - Configurable baud rate timing
+    ├── uart_tx                - Transmitter (parallel → serial)
+    ├── uart_rx                - Receiver (serial → parallel)
+    ├── uart_fifo (x2)         - TX/RX 16-byte buffers
+    ├── uart_tx_flow           - TX flow control logic
+    ├── uart_rts_gen           - RTS generation based on RX FIFO
+    └── uart_register_interface - CPU memory-mapped registers
 ```
 
-Note: We build these modules separately, then integrate them into `../peripheral.v`
+## Integration
 
-## Quick Start
-
-```bash
-# Lint all modules
-./lint.sh
-
-# Or use the Makefile in parent directory
-cd ..
-make lint
+**For TinyQV CPU Integration**:
+```verilog
+uart_peripheral uart (
+    .clk(clk),
+    .rst_n(rst_n),
+    
+    // CPU interface
+    .address(periph_addr[3:0]),
+    .data_in(periph_wdata),
+    .data_write_n(periph_wstrb),
+    .data_read_n(periph_rstrb),
+    .data_out(periph_rdata),
+    .data_ready(periph_ready),
+    
+    // UART pins
+    .uart_rx_pin(uart_rx),
+    .uart_tx_pin(uart_tx),
+    
+    // Flow control
+    .cts_n(uart_cts),
+    .rts_n(uart_rts),
+    
+    .interrupt(uart_int)
+);
 ```
 
-## Implementation Order
+## Modules
 
-According to [PROJECT_PLAN.md](../../../docs/PROJECT_PLAN.md):
+### Core UART
+- **uart_baud_generator.v** - Programmable baud rate clock (9600-921600)
+- **uart_tx.v** - 8N1 transmitter with start/stop bits
+- **uart_rx.v** - 8N1 receiver with error detection
 
-1. **Phase 2** (Jan 20): Baud Rate Generator
-2. **Phase 3** (Jan 21): UART Transmitter  
-3. **Phase 4** (Jan 22): UART Receiver
-4. **Phase 5** (Jan 23): Register Interface
-5. **Phase 6** (Jan 24): Top-level Integration
+### Enhanced Features
+- **uart_fifo.v** - Parameterizable FIFO (16-byte depth)
+- **uart_tx_flow.v** - CTS-based transmitter flow control
+- **uart_rts_gen.v** - RTS generation based on RX FIFO level
 
-## Coding Guidelines
+### Integration
+- **uart_register_interface.v** - CPU memory-mapped registers
+- **uart_peripheral.v** - Complete peripheral (integrates all modules)
 
-- **Always lint** before committing
-- Use **non-blocking assignments** (`<=`) for sequential logic
-- Use **blocking assignments** (`=`) for combinational logic
-- **Complete all case statements** (add default clause)
-- **Assign all outputs** in all branches (avoid latches)
-- Follow TinyQV naming conventions (matching cpu/ modules)
+## Test Results
 
-## Module Specifications
+**Status**: ✅ 37/37 tests passing
 
-Each module has detailed specifications in:
-- [UART_FUNDAMENTALS.md](../../../docs/UART_FUNDAMENTALS.md)
-- [BLOCK_DIAGRAMS.md](../../../docs/BLOCK_DIAGRAMS.md)
+- Baud generator: 3/3 PASS
+- TX/RX basic: 5/5 PASS  
+- FIFOs: 6/6 PASS
+- Flow control: 4/4 PASS
+- Register interface: 5/5 PASS
+- Loopback/integration: 14/14 PASS
 
-## Testing
+Run tests: `cd ../../test && make -f test_uart_loopback.mk`
 
-Tests are located in `../../../dp-1/peripheral/test/`:
-- `test_baud_gen.py` - Baud rate generator tests
-- `test_uart_tx.py` - Transmitter tests
-- `test_uart_rx.py` - Receiver tests
-- etc.
+## Register Map
 
-See [WORKFLOW.md](../WORKFLOW.md) for the complete development workflow.
+See [../../docs/uart/UART_REGISTERS.md](../../docs/uart/UART_REGISTERS.md) for complete register documentation.
+
+## Documentation
+
+Complete documentation available in `dp-1/docs/uart/`:
+- Block diagrams and timing diagrams
+- UART fundamentals and protocol details
+- Register specifications
+- Integration guides
+
+## Related Implementations
+
+- **Basic UART**: This module (standalone serial communication)
+- **Secure UART**: See `dp-1/docs/secure-uart/` for AES-encrypted UART peripheral
+

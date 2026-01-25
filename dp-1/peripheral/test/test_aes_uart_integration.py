@@ -152,7 +152,7 @@ async def test_rx_decryption(dut):
 
 @cocotb.test()
 async def test_full_duplex_encryption(dut):
-    """Test simultaneous TX encryption and RX decryption"""
+    """Test simultaneous TX encryption and RX decryption with independent data streams"""
     
     # Setup clock
     clock = Clock(dut.clk, 10, units="ns")
@@ -160,6 +160,9 @@ async def test_full_duplex_encryption(dut):
     
     # Reset
     dut.rst_n.value = 0
+    dut.aes_enable.value = 0
+    dut.tx_data_valid.value = 0
+    dut.rx_data_valid.value = 0
     await Timer(20, units="ns")
     dut.rst_n.value = 1
     await RisingEdge(dut.clk)
@@ -169,13 +172,66 @@ async def test_full_duplex_encryption(dut):
     dut.aes_enable.value = 1
     await RisingEdge(dut.clk)
     
-    # Start TX and RX operations in parallel
-    dut._log.info("Starting full-duplex operation...")
+    dut._log.info("Starting full-duplex operation with independent TX/RX data...")
     
-    # This test verifies that TX and RX can operate independently
-    # In a real scenario, they would handle different data streams
+    # Prepare TX data (incrementing pattern)
+    tx_plaintext = [i & 0xFF for i in range(16)]
     
-    dut._log.info("✓ Full-duplex operation supported (TX and RX have independent AES cores)")
+    # Prepare RX data (use known ciphertext to decrypt)
+    rx_ciphertext_bytes = []
+    for i in range(16):
+        byte_val = (EXPECTED_CIPHERTEXT >> (120 - i*8)) & 0xFF
+        rx_ciphertext_bytes.append(byte_val)
+    
+    # Send TX and RX data simultaneously
+    async def send_tx_data():
+        for i, byte_val in enumerate(tx_plaintext):
+            dut.tx_data_in.value = byte_val
+            dut.tx_data_valid.value = 1
+            await RisingEdge(dut.clk)
+            dut.tx_data_valid.value = 0
+            if i < 15:
+                await RisingEdge(dut.clk)
+    
+    async def send_rx_data():
+        for i, byte_val in enumerate(rx_ciphertext_bytes):
+            dut.rx_data_in.value = byte_val
+            dut.rx_data_valid.value = 1
+            await RisingEdge(dut.clk)
+            dut.rx_data_valid.value = 0
+            if i < 15:
+                await RisingEdge(dut.clk)
+    
+    # Start both simultaneously
+    tx_task = cocotb.start_soon(send_tx_data())
+    rx_task = cocotb.start_soon(send_rx_data())
+    
+    # Wait for both to finish sending
+    await tx_task
+    await rx_task
+    
+    # Wait for both operations to complete
+    dut._log.info("Waiting for both TX encryption and RX decryption to complete...")
+    tx_done = False
+    rx_done = False
+    timeout = 0
+    
+    while not (tx_done and rx_done) and timeout < 200:
+        await RisingEdge(dut.clk)
+        if dut.tx_block_valid.value == 1 and not tx_done:
+            tx_result = dut.tx_block_out.value.integer
+            dut._log.info(f"TX encryption completed: 0x{tx_result:032x}")
+            tx_done = True
+        if dut.rx_block_valid.value == 1 and not rx_done:
+            rx_result = dut.rx_block_out.value.integer
+            expected_rx = int.from_bytes(TEST_PLAINTEXT_BYTES, 'big')
+            assert rx_result == expected_rx, f"RX decryption failed: got 0x{rx_result:032x}, expected 0x{expected_rx:032x}"
+            dut._log.info(f"RX decryption completed: 0x{rx_result:032x}")
+            rx_done = True
+        timeout += 1
+    
+    assert tx_done and rx_done, f"Full-duplex operation timeout (TX:{tx_done}, RX:{rx_done})"
+    dut._log.info("✓ Full-duplex operation successful - TX and RX operate independently")
 
 @cocotb.test()
 async def test_all_zeros(dut):

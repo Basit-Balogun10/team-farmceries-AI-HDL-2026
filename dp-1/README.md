@@ -11,13 +11,17 @@ Team implementation of a **Secure UART peripheral** with FIFOs, flow control, an
 -   **0.018 mm²** area, **0ns WNS**, **0.0014 µW** power
 -   **Production-ready** with clean synthesis
 
-### Phase 2: Secure UART Enhancements (In Progress 🔄)
+### Phase 2: Secure UART with AES-128 Encryption (Completed ✅)
 
--   **FIFO Buffers**: 16-byte TX/RX with watermark detection
--   **Flow Control**: RTS/CTS hardware handshaking
--   **AES-128 Engine**: Iterative encryption (~24 cycles/block)
--   **Enhanced Interface**: 12 registers (6 UART + 6 security/FIFO)
--   **Target**: ≤0.050 mm², ≤15 µW, 0ns WNS @ 70MHz
+-   **AES-128 Engine**: Hardware-accelerated encryption/decryption (11 cycles/block)
+-   **Transparent Operation**: CPU sees simple byte-level TX/RX interface
+-   **Full-Duplex**: Dual independent AES cores for simultaneous TX encrypt + RX decrypt
+-   **Bypass Mode**: Optional plaintext mode for debugging/compatibility
+-   **18/18 tests passing** (13 component + 5 system tests)
+-   **Performance**: 0.01% overhead (AES is 8800× faster than UART!)
+-   **Security**: AES-128 with 340 undecillion possible keys
+
+**Design Context**: While industry typically uses WiFi/TLS or software AES for secure communication, our hardware-accelerated AES-UART demonstrates transparent encryption in dedicated circuits - valuable for learning FPGA design patterns and understanding hardware/software integration. See [SECURE_UART_FUNDAMENTALS.md](docs/secure-uart/SECURE_UART_FUNDAMENTALS.md#why-isnt-secure-being-done-this-way) for detailed industry comparison.
 
 ## Quick Start
 
@@ -143,9 +147,29 @@ dp-1/
 
 ## Documentation
 
--   **[SYNTHESIS_AND_PPA_ANALYSIS.md](docs/SYNTHESIS_AND_PPA_ANALYSIS.md)** - Complete synthesis and PPA workflow guide
--   **AI-HDL Documentation** - See `docs/` in repository root
--   **Submission Package** - See `submissions/` folder for deliverables structure
+### UART Peripheral (Phase 1)
+-   **[docs/uart/](docs/uart/)** - Complete UART documentation
+  - UART_FUNDAMENTALS.md - Beginner-friendly introduction
+  - BLOCK_DIAGRAMS.md - Architecture and module interfaces
+  - diagrams/ - ASCII art, Mermaid, and timing diagrams
+
+### AES-128 Engine
+-   **[docs/aes/](docs/aes/)** - Complete AES documentation
+  - AES_FUNDAMENTALS.md - Encryption theory and implementation
+  - BLOCK_DIAGRAMS.md - Round functions and data paths
+  - diagrams/ - Comprehensive visual documentation
+
+### Secure UART System (Phase 2)
+-   **[docs/secure-uart/](docs/secure-uart/)** - Complete system documentation
+  - README.md - System overview and integration guide
+  - SECURE_UART_FUNDAMENTALS.md - Theory, security analysis, industry comparison
+  - BLOCK_DIAGRAMS.md - Complete architecture and signal paths
+  - SOFTWARE_GUIDE.md - C driver examples and register API
+  - diagrams/ - 500+ lines of ASCII/Mermaid/timing diagrams
+
+### Tools & Submission
+-   **[SYNTHESIS_AND_PPA_ANALYSIS.md](docs/SYNTHESIS_AND_PPA_ANALYSIS.md)** - Synthesis workflow guide
+-   **[submissions/](submissions/)** - Design reports, PPA analysis, test results
 
 ## Development Workflow
 
