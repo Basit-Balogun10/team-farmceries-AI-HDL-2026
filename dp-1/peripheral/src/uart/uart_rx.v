@@ -73,7 +73,6 @@ module uart_rx (
                     IDLE: begin
                         // Wait for falling edge (start bit)
                         if (!rx_sync2) begin
-                            // $display("RX Debug: Detected START bit at time %t (rx_in=%b)", $time, rx_sync2);
                             state <= START;
                             sample_cnt <= 4'd0;
                             bit_cnt <= 4'd0;
@@ -95,7 +94,6 @@ module uart_rx (
                     DATA: begin
                         // Sample at middle of bit period (after 7 ticks)
                         if (sample_cnt == 4'd7) begin
-                            // $display("RX Debug: Sampled Data Bit %d = %b at time %t", bit_cnt, rx_sync2, $time);
                             // Shift in data bit (LSB first)
                             rx_shift <= {rx_sync2, rx_shift[7:1]};
                             
@@ -110,7 +108,6 @@ module uart_rx (
                             // End of bit period
                             if (bit_cnt == 4'd8) begin
                                 // All 8 bits received, go to stop
-                                // $display("RX Debug: Data frame end. rx_shift=%h. Transition to STOP. time %t", {rx_sync2, rx_shift[7:1]}, $time);
                                 state <= STOP;
                                 sample_cnt <= 4'd0;
                             end else begin
@@ -125,7 +122,6 @@ module uart_rx (
                     STOP: begin
                         // Sample at middle of stop bit (after 7 ticks)
                         if (sample_cnt == 4'd7) begin
-                            // $display("RX Debug: Sampling Stop Bit = %b at time %t", rx_sync2, $time);
                             // Verify stop bit is high
                             if (rx_sync2) begin
                                 // Valid frame received

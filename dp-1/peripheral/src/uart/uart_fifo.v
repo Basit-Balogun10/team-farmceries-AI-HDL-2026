@@ -50,6 +50,7 @@ module uart_fifo #(
     
     // Internal memory array
     reg [DATA_WIDTH-1:0] mem [0:DEPTH-1];
+    integer i;  // For initialization loop
     
     // Read and write pointers
     reg [ADDR_WIDTH:0] wr_ptr;  // Extra bit for full/empty distinction
@@ -68,6 +69,10 @@ module uart_fifo #(
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             wr_ptr <= {(ADDR_WIDTH+1){1'b0}};
+            // Initialize memory to prevent X/Z values
+            for (i = 0; i < DEPTH; i = i + 1) begin
+                mem[i] <= {DATA_WIDTH{1'b0}};
+            end
         end else begin
             if (wr_en && !full) begin
                 mem[wr_ptr[ADDR_WIDTH-1:0]] <= wr_data;

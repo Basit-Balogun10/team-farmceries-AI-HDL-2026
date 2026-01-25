@@ -82,6 +82,7 @@ module uart_register_interface (
     wire write_en = (data_write_n != 2'b11);
     wire read_en = (data_read_n != 2'b11);
     reg tx_busy_prev;  // Track tx_busy edge for interrupt generation
+    reg rx_ready_prev; // Track rx_ready edge for interrupt generation
     
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -89,9 +90,9 @@ module uart_register_interface (
             tx_data_reg    <= 8'h00;
             tx_start       <= 1'b0;
             int_en_reg     <= 2'b00;
-            rx_data_reg    <= 8'h00;
             int_status_reg <= 2'b00;
             tx_busy_prev   <= 1'b0;
+            rx_ready_prev  <= 1'b0;
             flow_ctrl_reg  <= 1'b0;   // Flow control disabled by default
             rx_data_read   <= 1'b0;
         end else begin
@@ -102,10 +103,12 @@ module uart_register_interface (
             // Track tx_busy for edge detection
             tx_busy_prev <= tx_busy;
             
-            // Latch RX data when ready pulse occurs
-            if (rx_ready) begin
-                rx_data_reg      <= rx_data;
-                int_status_reg[1] <= 1'b1;  // Set RX interrupt pending
+            // Track rx_ready for interrupt edge detection
+            rx_ready_prev <= rx_ready;
+            
+            // Set interrupt on rx_ready rising edge (FIFO transition from empty to non-empty)
+            if (rx_ready && !rx_ready_prev) begin
+                int_status_reg[1] <= 1'b1;
             end
             
             // Set TX interrupt when transmission completes (tx_busy falling edge)
@@ -161,7 +164,7 @@ module uart_register_interface (
             ADDR_CTRL:      read_data = {24'h0, ctrl_reg};
             ADDR_STATUS:    read_data = {24'h0, status_reg};
             ADDR_TX_DATA:   read_data = {24'h0, tx_data_reg};
-            ADDR_RX_DATA:   read_data = {24'h0, rx_data_reg};
+            ADDR_RX_DATA:   read_data = {24'h0, rx_data};  // Read directly from FIFO output
             ADDR_INT_EN:    read_data = {30'h0, int_en_reg};
             ADDR_INT_CLR:   read_data = {30'h0, int_status_reg};
             ADDR_FLOW_CTRL: read_data = {31'h0, flow_ctrl_reg};

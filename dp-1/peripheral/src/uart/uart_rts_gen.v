@@ -28,11 +28,11 @@ module uart_rts_gen (
     // RTS generation logic
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            rts_n <= 1'b0;  // Default: ready to receive
+            rts_n <= 1'b0;  // Default: ready (low) to receive
         end else begin
             if (flow_ctrl_en) begin
-                // Assert RTS (high) when watermark is reached
-                // This signals remote to stop sending
+                // RTS is active-low: 0 = ready to receive, 1 = not ready
+                // Direct mapping: watermark=0 -> RTS=0 (ready), watermark=1 -> RTS=1 (not ready)
                 rts_n <= rx_fifo_watermark;
             end else begin
                 // Flow control disabled: always ready
