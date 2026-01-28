@@ -111,6 +111,7 @@ echo -e "${YELLOW}[2/8] Copying source files to flat directory...${NC}"
 cp peripheral/src/peripheral.v "$WORK_DIR/"
 cp peripheral/src/tt_wrapper.v "$WORK_DIR/"
 cp peripheral/src/uart/*.v "$WORK_DIR/"
+cp peripheral/src/aes/*.v "$WORK_DIR/"
 cp peripheral/src/test_harness/*.sv "$WORK_DIR/"
 cp cpu/src/*.v "$WORK_DIR/"
 echo -e "${GREEN}  ✓ All files copied${NC}"
@@ -146,6 +147,19 @@ read_verilog uart_tx.v
 read_verilog uart_rx.v
 read_verilog uart_register_interface.v
 read_verilog uart_peripheral.v
+
+# Read AES peripheral modules (Phase 2 - in dependency order)
+read_verilog -defer aes_sbox.v
+read_verilog -defer aes_add_round_key.v
+read_verilog -defer aes_shift_rows.v
+read_verilog -defer aes_mix_columns.v
+read_verilog -defer aes_round.v
+read_verilog -defer aes_inv_round.v
+read_verilog -defer aes_key_expansion.v
+read_verilog -defer aes_core.v
+read_verilog -defer aes_uart_streaming.v
+read_verilog -defer aes_uart_controller.v
+read_verilog -defer secure_uart_peripheral.v
 
 # Read top-level files
 read_verilog peripheral.v
@@ -193,6 +207,7 @@ config = {k: v for k, v in config.items() if k != '//'}
 
 # Override/add our specific fields
 config['DESIGN_NAME'] = '$TOP_MODULE'
+
 config['VERILOG_FILES'] = [
     'dir::reclocking.sv',
     'dir::synchronizer.sv',
@@ -213,6 +228,17 @@ config['VERILOG_FILES'] = [
     'dir::uart_rx.v',
     'dir::uart_register_interface.v',
     'dir::uart_peripheral.v',
+    'dir::aes_sbox.v',
+    'dir::aes_add_round_key.v',
+    'dir::aes_shift_rows.v',
+    'dir::aes_mix_columns.v',
+    'dir::aes_round.v',
+    'dir::aes_inv_round.v',
+    'dir::aes_key_expansion.v',
+    'dir::aes_core.v',
+    'dir::aes_uart_streaming.v',
+    'dir::aes_uart_controller.v',
+    'dir::secure_uart_peripheral.v',
     'dir::peripheral.v',
     'dir::counter.v',
     'dir::time.v',
@@ -238,43 +264,50 @@ echo "  Mounting $WORK_DIR_ABS directly into container"
 echo "  Starting OpenLANE flow (this may take 5-10 minutes)..."
 cd "$OPENLANE_PATH"
 
-# Check if container is already running
-CONTAINER_ID=$(docker ps --filter "ancestor=ghcr.io/the-openroad-project/openlane" --format "{{.ID}}" | head -1)
+# Clean up any old/stopped OpenLANE containers first
+echo "  Cleaning up old containers..."
+docker stop $(docker ps -aq --filter "ancestor=ghcr.io/the-openroad-project/openlane") 2>/dev/null || true
+docker rm $(docker ps -aq --filter "ancestor=ghcr.io/the-openroad-project/openlane") 2>/dev/null || true
+
+# Start fresh container
+echo "  Starting new OpenLANE Docker container..."
+CONTAINER_ID=$(docker run -d \
+    -v "$OPENLANE_PATH:/openlane" \
+    -v "$OPENLANE_PATH/designs:/openlane/install" \
+    -v "$HOME:$HOME" \
+    -v "$PDK_ROOT:$PDK_ROOT" \
+    -v "$WORK_DIR_ABS:/openlane/designs/$OPENLANE_DESIGN_NAME" \
+    -e PDK_ROOT="$PDK_ROOT" \
+    -e PDK="sky130A" \
+    --user $(id -u):$(id -g) \
+    ghcr.io/the-openroad-project/openlane:ff5509f65b17bfa4068d5336495ab1718987ff69-amd64 \
+    sleep infinity)
 
 if [ -z "$CONTAINER_ID" ]; then
-    echo "  Starting new OpenLANE Docker container..."
-    # Start container in detached mode
-    # Mount synthesis-work directly to avoid copying
-    CONTAINER_ID=$(docker run -d \
-        -v "$OPENLANE_PATH:/openlane" \
-        -v "$OPENLANE_PATH/designs:/openlane/install" \
-        -v "$HOME:$HOME" \
-        -v "$PDK_ROOT:$PDK_ROOT" \
-        -v "$WORK_DIR_ABS:/openlane/designs/$OPENLANE_DESIGN_NAME" \
-        -e PDK_ROOT="$PDK_ROOT" \
-        -e PDK="sky130A" \
-        --user $(id -u):$(id -g) \
-        ghcr.io/the-openroad-project/openlane:ff5509f65b17bfa4068d5336495ab1718987ff69-amd64 \
-        sleep infinity)
-    
-    if [ -z "$CONTAINER_ID" ]; then
-        echo -e "${RED}  ✗ Failed to start Docker container${NC}"
-        exit 1
-    fi
-    STARTED_CONTAINER=true
-else
-    echo "  Using existing OpenLANE container ($CONTAINER_ID)"
-    STARTED_CONTAINER=false
+    echo -e "${RED}  ✗ Failed to start Docker container${NC}"
+    exit 1
 fi
 
 # Run the flow
 if docker exec "$CONTAINER_ID" /bin/bash -c "cd /openlane && ./flow.tcl -design $OPENLANE_DESIGN_NAME" 2>&1 | tee openlane.log; then
     echo -e "${GREEN}  ✓ OpenLANE completed successfully${NC}"
-    
-    # Stop container if we started it
-    if [ "$STARTED_CONTAINER" = true ]; then
-        docker stop "$CONTAINER_ID" > /dev/null 2>&1
-    fi
+    FLOW_SUCCESS=true
+else
+    echo -e "${RED}  ✗ OpenLANE flow failed${NC}"
+    echo "  Last 50 lines of openlane.log:"
+    tail -50 openlane.log
+    FLOW_SUCCESS=false
+fi
+
+# Always clean up container when done
+echo "  Cleaning up container..."
+docker stop "$CONTAINER_ID" > /dev/null 2>&1
+docker rm "$CONTAINER_ID" > /dev/null 2>&1
+
+if [ "$FLOW_SUCCESS" = false ]; then
+    cd "$SCRIPT_DIR"
+    exit 1
+fi
     
     # Find latest run (now in synthesis-work/runs/ due to direct mount)
     LATEST_RUN=$(ls -t "$WORK_DIR_ABS/runs" 2>/dev/null | head -1)

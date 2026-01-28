@@ -48,6 +48,7 @@ module tqvp_basit_uart (
 
     // UART TX/RX wires
     wire uart_tx_wire;
+    wire rts_n_unused;  // RTS flow control output (unused)
     wire uart_rx_wire;
     
     // Connect UART RX from ui_in[7], TX to uo_out[0]
@@ -73,7 +74,7 @@ module tqvp_basit_uart (
         
         // Flow control (unused)
         .cts_n(1'b0),
-        .rts_n(),
+        .rts_n(rts_n_unused),  // Connect but don't use
         
         // Interrupt
         .interrupt(user_interrupt)

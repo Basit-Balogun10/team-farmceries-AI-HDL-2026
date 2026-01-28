@@ -99,6 +99,8 @@ module uart_peripheral (
     //=========================================================================
     
     // TX FIFO: Buffers data from CPU writes
+    // TX FIFO watermark output (unused)
+    wire tx_fifo_watermark;
     uart_fifo #(
         .DEPTH(16),
         .DATA_WIDTH(8),
@@ -112,7 +114,7 @@ module uart_peripheral (
         .rd_en(tx_fifo_rd_en),
         .full(tx_fifo_full),
         .empty(tx_fifo_empty),
-        .watermark(),  // Not used for TX FIFO
+        .watermark(tx_fifo_watermark),  // Unused but connected for clean synthesis
         .count(tx_fifo_count)
     );
     
