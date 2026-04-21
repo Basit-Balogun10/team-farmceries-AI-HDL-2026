@@ -4,9 +4,10 @@
 
 The **Secure UART System** is a complete hardware implementation that combines UART serial communication with AES-128 encryption to provide **transparent, hardware-accelerated encrypted communication**. This is not just a UART peripheral with encryption bolted on - it's an integrated secure communication system designed from the ground up.
 
-**Status**: ✅ **Complete, tested, and ready for CPU integration**
-- **Test Coverage**: 18/18 tests passing (component + system tests)
-- **Synthesis**: Ready (scripts available in `dp-1/scripts/`)
+**Status**: ✅ **Integrated and documented, with validated reduced-mode PPA closure**
+- **Test Coverage**: 18/18 tests passing (component + system tests, historical validation set)
+- **OpenLANE**: Reduced secure mode (AES_BLOCK_BYTES=1) flow complete; 2-byte reduced mode currently fails placement utilization
+- **Synthesis Scripts**: Available in `dp-1/scripts/`
 - **Documentation**: Complete with architecture diagrams
 
 ## The Vision

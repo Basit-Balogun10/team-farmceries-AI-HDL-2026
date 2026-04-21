@@ -448,7 +448,7 @@ Design and implement a production-grade secure UART (Universal Asynchronous Rece
 **Deliverables Structure:**
 
 ```
-submissions/
+submission/
 ├── README.md                    # Executive summary
 ├── DESIGN_REPORT.md            # Technical details
 ├── PPA_ANALYSIS.md             # Metrics analysis
