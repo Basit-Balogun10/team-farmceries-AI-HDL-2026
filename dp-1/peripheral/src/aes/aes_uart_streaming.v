@@ -41,7 +41,11 @@ module aes_uart_streaming #(
     output wire        rx_ready_out,       // Ready to accept more data
     output wire [7:0]  rx_data_out,
     output wire        rx_valid_out,
-    input  wire        rx_ready_in         // CPU ready to read data
+    input  wire        rx_ready_in,        // CPU ready to read data
+
+    // Busy indicators for status/clock-enable decisions in parent module
+    output wire        tx_busy_out,
+    output wire        rx_busy_out
 );
 
     localparam integer FULL_AES_MODE = (BLOCK_BYTES == 16);
@@ -79,6 +83,7 @@ module aes_uart_streaming #(
     reg [127:0] tx_plaintext_buf;
     reg [127:0] tx_ciphertext_buf;
     reg [3:0] tx_output_count;
+    reg [7:0] tx_bypass_data;
     
     // TX AES Core
     reg tx_aes_start;
@@ -112,6 +117,7 @@ module aes_uart_streaming #(
             tx_output_count <= 4'd0;
             tx_plaintext_buf <= 128'h0;
             tx_ciphertext_buf <= 128'h0;
+            tx_bypass_data <= 8'h0;
             tx_aes_start <= 1'b0;
         end else begin
             tx_aes_start <= 1'b0;
@@ -123,7 +129,6 @@ module aes_uart_streaming #(
                     if (tx_valid_in) begin
                         if (aes_enable) begin
                             // Start buffering for encryption
-                            tx_plaintext_buf <= 128'h0;
                             tx_plaintext_buf[127 -: 8] <= tx_data_in;
                             tx_byte_count <= 4'd1;
 
@@ -136,6 +141,7 @@ module aes_uart_streaming #(
                             end
                         end else begin
                             // Bypass mode - pass through directly
+                            tx_bypass_data <= tx_data_in;
                             tx_state <= TX_BYPASS;
                         end
                     end
@@ -171,8 +177,7 @@ module aes_uart_streaming #(
                 
                 TX_SERIALIZE: begin
                     if (tx_ready_in && tx_output_count < BLOCK_BYTES) begin
-                        // Shift out one byte (MSB first)
-                        tx_ciphertext_buf <= {tx_ciphertext_buf[119:0], 8'h0};
+                        // Advance byte pointer without shifting full 128-bit data.
                         tx_output_count <= tx_output_count + 1;
                         
                         if (tx_output_count == (BLOCK_BYTES - 1)) begin
@@ -193,9 +198,9 @@ module aes_uart_streaming #(
     
     // TX Outputs
     assign tx_ready_out = (tx_state == TX_IDLE) || (tx_state == TX_BUFFER && tx_byte_count < BLOCK_BYTES);
-    assign tx_data_out = (tx_state == TX_SERIALIZE) ? tx_ciphertext_buf[127:120] : 
-                         (tx_state == TX_BYPASS) ? tx_data_in : 8'h0;
-    assign tx_valid_out = (tx_state == TX_SERIALIZE) || (tx_state == TX_BYPASS && tx_valid_in);
+    assign tx_data_out = (tx_state == TX_SERIALIZE) ? tx_ciphertext_buf[127 - (tx_output_count * 8) -: 8] : 
+                         (tx_state == TX_BYPASS) ? tx_bypass_data : 8'h0;
+    assign tx_valid_out = (tx_state == TX_SERIALIZE) || (tx_state == TX_BYPASS);
     
     // =========================================================================
     // RX Path: Byte Buffering, Decryption, Serialization
@@ -213,6 +218,7 @@ module aes_uart_streaming #(
     reg [127:0] rx_ciphertext_buf;
     reg [127:0] rx_plaintext_buf;
     reg [3:0] rx_output_count;
+    reg [7:0] rx_bypass_data;
     
     // RX AES Core
     reg rx_aes_start;
@@ -246,6 +252,7 @@ module aes_uart_streaming #(
             rx_output_count <= 4'd0;
             rx_ciphertext_buf <= 128'h0;
             rx_plaintext_buf <= 128'h0;
+            rx_bypass_data <= 8'h0;
             rx_aes_start <= 1'b0;
         end else begin
             rx_aes_start <= 1'b0;
@@ -257,7 +264,6 @@ module aes_uart_streaming #(
                     if (rx_valid_in) begin
                         if (aes_enable) begin
                             // Start buffering for decryption
-                            rx_ciphertext_buf <= 128'h0;
                             rx_ciphertext_buf[127 -: 8] <= rx_data_in;
                             rx_byte_count <= 4'd1;
 
@@ -270,6 +276,7 @@ module aes_uart_streaming #(
                             end
                         end else begin
                             // Bypass mode
+                            rx_bypass_data <= rx_data_in;
                             rx_state <= RX_BYPASS;
                         end
                     end
@@ -305,8 +312,7 @@ module aes_uart_streaming #(
                 
                 RX_SERIALIZE: begin
                     if (rx_ready_in && rx_output_count < BLOCK_BYTES) begin
-                        // Shift out one byte (MSB first)
-                        rx_plaintext_buf <= {rx_plaintext_buf[119:0], 8'h0};
+                        // Advance byte pointer without shifting full 128-bit data.
                         rx_output_count <= rx_output_count + 1;
                         
                         if (rx_output_count == (BLOCK_BYTES - 1)) begin
@@ -326,9 +332,12 @@ module aes_uart_streaming #(
     
     // RX Outputs
     assign rx_ready_out = (rx_state == RX_IDLE) || (rx_state == RX_BUFFER && rx_byte_count < BLOCK_BYTES);
-    assign rx_data_out = (rx_state == RX_SERIALIZE) ? rx_plaintext_buf[127:120] :
-                         (rx_state == RX_BYPASS) ? rx_data_in : 8'h0;
-    assign rx_valid_out = (rx_state == RX_SERIALIZE) || (rx_state == RX_BYPASS && rx_valid_in);
+    assign rx_data_out = (rx_state == RX_SERIALIZE) ? rx_plaintext_buf[127 - (rx_output_count * 8) -: 8] :
+                         (rx_state == RX_BYPASS) ? rx_bypass_data : 8'h0;
+    assign rx_valid_out = (rx_state == RX_SERIALIZE) || (rx_state == RX_BYPASS);
+
+    assign tx_busy_out = (tx_state != TX_IDLE);
+    assign rx_busy_out = (rx_state != RX_IDLE);
 
 endmodule
 

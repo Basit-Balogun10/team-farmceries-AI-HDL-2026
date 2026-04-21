@@ -92,6 +92,7 @@ module secure_uart_peripheral #(
     wire       uart_tx_en = uart_ctrl_reg[4];
     wire       uart_rx_en = uart_ctrl_reg[5];
     wire       aes_enable = aes_enable_reg;
+    wire       baud_enable;
     
     // =========================================================================
     // UART Core Modules
@@ -103,7 +104,7 @@ module secure_uart_peripheral #(
         .clk(clk),
         .rst_n(rst_n),
         .baud_sel(baud_sel),
-        .enable(1'b1),
+        .enable(baud_enable),
         .baud_tick(baud_tick)
     );
     
@@ -149,6 +150,8 @@ module secure_uart_peripheral #(
     wire [7:0] aes_rx_out;
     wire aes_rx_valid;
     wire aes_rx_ready;
+    wire aes_tx_busy;
+    wire aes_rx_busy;
     
     // Signals for CPU interface
     reg cpu_tx_write;
@@ -169,21 +172,24 @@ module secure_uart_peripheral #(
         .tx_ready_out(aes_tx_ready),
         .tx_data_out(aes_tx_out),
         .tx_valid_out(aes_tx_valid),
-        .tx_ready_in(~uart_tx_busy),
+        .tx_ready_in(uart_tx_en && ~uart_tx_busy),
         
         // RX: UART receive → AES → CPU read
         .rx_data_in(uart_rx_data),
-        .rx_valid_in(uart_rx_ready),
+        .rx_valid_in(uart_rx_en && uart_rx_ready),
         .rx_ready_out(aes_rx_ready),
         .rx_data_out(aes_rx_out),
         .rx_valid_out(aes_rx_valid),
-        .rx_ready_in(cpu_rx_read)
+        .rx_ready_in(cpu_rx_read),
+
+        .tx_busy_out(aes_tx_busy),
+        .rx_busy_out(aes_rx_busy)
     );
     
     // Connect AES output to UART TX
     always @(posedge clk) begin
         uart_tx_start <= 1'b0;
-        if (aes_tx_valid && !uart_tx_busy) begin
+        if (uart_tx_en && aes_tx_valid && !uart_tx_busy) begin
             uart_tx_data <= aes_tx_out;
             uart_tx_start <= 1'b1;
         end
@@ -211,6 +217,9 @@ module secure_uart_peripheral #(
         end
     end
     
+    // Keep baud generation active only when UART is enabled or datapaths are busy.
+    assign baud_enable = uart_tx_en || uart_rx_en || uart_tx_busy || aes_tx_busy || aes_rx_busy;
+
     // Register Write
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -275,8 +284,7 @@ module secure_uart_peripheral #(
                     ADDR_AES_CTRL: data_out <= {31'h0, aes_enable_reg};
                     
                     ADDR_AES_STATUS: begin
-                        // TODO: Get actual busy status from AES streaming module
-                        data_out <= {29'h0, aes_key_ready, 1'b0, 1'b0};
+                        data_out <= {29'h0, aes_key_ready, aes_rx_busy, aes_tx_busy};
                     end
                     
                     ADDR_AES_KEY0: data_out <= aes_key_reg[127:96];

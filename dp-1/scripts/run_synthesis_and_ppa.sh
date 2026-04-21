@@ -26,6 +26,8 @@ usage() {
     echo "  --cleanup                    Remove temporary files after completion"
     echo "  --pdk-root <path>            Custom PDK root path (default: \$HOME/.ciel)"
     echo "  --aes-block-bytes <N>        AES block bytes for PPA: 1|2|4|8|16 (default: 16)"
+    echo "  --die-area \"x0 y0 x1 y1\"      Override OpenLANE DIE_AREA (default: 0 0 190.00 140.00)"
+    echo "  --pl-target-density <0..1>   Override OpenLANE placement target density (default: 0.85)"
     echo ""
     echo "OpenLANE path resolution order:"
     echo "  1) Positional [openlane_path] argument"
@@ -34,6 +36,7 @@ usage() {
     echo "Examples:"
     echo "  ./scripts/run_synthesis_and_ppa.sh ~vlsi/tools/OpenLane --cleanup"
     echo "  ./scripts/run_synthesis_and_ppa.sh --aes-block-bytes 1"
+    echo "  ./scripts/run_synthesis_and_ppa.sh --pl-target-density 0.80 --die-area \"0 0 200 150\""
     echo "  ./scripts/run_synthesis_and_ppa.sh /path/to/OpenLane --pdk-root /custom/pdk"
 }
 
@@ -51,6 +54,8 @@ CLEANUP=false
 OPENLANE_PATH=""
 CUSTOM_PDK_ROOT=""
 AES_BLOCK_BYTES=16
+DIE_AREA_OVERRIDE=""
+PL_TARGET_DENSITY="0.85"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -74,6 +79,24 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             AES_BLOCK_BYTES="$2"
+            shift 2
+            ;;
+        --die-area)
+            if [[ $# -lt 2 ]]; then
+                echo -e "${RED}Error: --die-area requires a value${NC}"
+                usage
+                exit 1
+            fi
+            DIE_AREA_OVERRIDE="$2"
+            shift 2
+            ;;
+        --pl-target-density)
+            if [[ $# -lt 2 ]]; then
+                echo -e "${RED}Error: --pl-target-density requires a value${NC}"
+                usage
+                exit 1
+            fi
+            PL_TARGET_DENSITY="$2"
             shift 2
             ;;
         -h|--help)
@@ -101,6 +124,11 @@ case "$AES_BLOCK_BYTES" in
         exit 1
         ;;
 esac
+
+if ! [[ "$PL_TARGET_DENSITY" =~ ^((0(\.[0-9]+)?)|(1(\.0+)?))$ ]]; then
+    echo -e "${RED}Error: --pl-target-density must be a number between 0 and 1${NC}"
+    exit 1
+fi
 
 if [[ -n "$OPENLANE_PATH" ]]; then
     OPENLANE_PATH="$(expand_special_path "$OPENLANE_PATH")"
@@ -133,6 +161,10 @@ OPENLANE_IMAGE="ghcr.io/the-openroad-project/openlane:ff5509f65b17bfa4068d533649
 # immediate over-utilization for secure-UART experiments.
 DIE_AREA="0 0 190.00 140.00"
 
+if [[ -n "$DIE_AREA_OVERRIDE" ]]; then
+    DIE_AREA="$DIE_AREA_OVERRIDE"
+fi
+
 # Set PDK_ROOT (custom flag > env var > default)
 if [[ -n "$CUSTOM_PDK_ROOT" ]]; then
     PDK_ROOT="$CUSTOM_PDK_ROOT"
@@ -154,6 +186,8 @@ echo ""
 echo -e "${GREEN}OpenLANE path: $OPENLANE_PATH${NC}"
 echo -e "${GREEN}PDK root: $PDK_ROOT${NC}"
 echo -e "${GREEN}AES block bytes for this run: $AES_BLOCK_BYTES${NC}"
+echo -e "${GREEN}DIE_AREA: $DIE_AREA${NC}"
+echo -e "${GREEN}PL target density: $PL_TARGET_DENSITY${NC}"
 echo -e "${GREEN}Running full synthesis + PPA analysis${NC}"
 echo ""
 
@@ -309,8 +343,8 @@ config['SYNTH_NO_FLAT'] = 1
 
 # Placement tuning: reduced AES experiments were failing GPL-0302 with
 # suggested density ~0.79, so use a denser target for robust convergence.
-config['PL_TARGET_DENSITY_PCT'] = 85
-config['PL_TARGET_DENSITY'] = 0.85
+config['PL_TARGET_DENSITY'] = $PL_TARGET_DENSITY
+config['PL_TARGET_DENSITY_PCT'] = int(float($PL_TARGET_DENSITY) * 100)
 
 with open('$WORK_DIR/config.json', 'w', encoding='utf-8') as f:
     json.dump(config, f, indent=2)

@@ -55,6 +55,12 @@ It includes:
 - docs/
 - media/
 
+## DP-2 Workspace
+
+- dp-1/dp2/: DP-2 planning, reports, logs, and metrics artifacts
+- scripts/run_dp2_experiments.sh: runs baseline/candidate PPA and generates comparison report
+- scripts/dp2_compare_metrics.py: compares two OpenLANE metrics.csv files into markdown
+
 ## Directory Layout
 
 ```text
