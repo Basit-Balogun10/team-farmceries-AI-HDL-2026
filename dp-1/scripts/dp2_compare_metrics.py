@@ -96,7 +96,7 @@ def main() -> None:
     parser.add_argument(
         "--out-md",
         type=Path,
-        default=Path("dp2/reports/BEFORE_AFTER_PPA.md"),
+        default=Path("../dp-2/reports/BEFORE_AFTER_PPA.md"),
     )
     args = parser.parse_args()
 

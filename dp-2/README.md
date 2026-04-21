@@ -17,6 +17,24 @@ This directory tracks all DP-2 planning, experiments, and reports for the Secure
 - reports/BEFORE_AFTER_PPA.md
 - logs/REGRESSION_RESULTS.md
 - results/ (captured experiment metrics)
+- ai_logs/raw_logs/00_complete_conversation.md
+
+## Deliverables Mapping (DP-2 Docs)
+
+This DP-2 folder is organized by phase-2 deliverables rather than cloning DP-1 submission layout exactly.
+
+- Optimized RTL:
+  - canonical source remains in dp-1/peripheral/src/aes/
+  - key optimized modules: aes_uart_streaming.v, secure_uart_peripheral.v
+- Final STA and PPA reports:
+  - dp-1/runs/latest/reports/
+  - dp-2/results/*.csv
+- Optimization report:
+  - reports/OPTIMIZATION_PLAN.md
+  - reports/BEFORE_AFTER_PPA.md
+  - reports/OPTIMIZATION_REPORT.md
+- AI logs:
+  - ai_logs/raw_logs/00_complete_conversation.md (raw-only, no derived split required)
 
 ## Automation
 

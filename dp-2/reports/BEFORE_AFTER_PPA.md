@@ -1,7 +1,7 @@
 # DP-2 Before/After PPA Comparison
 
-- Baseline: RUN_2026.04.21_13.25.50 (density 0.60)
-- Optimized: RUN_2026.04.21_13.14.49 (density 0.70)
+- Baseline: RUN_2026.04.21_14.44.18
+- Optimized: RUN_2026.04.21_14.53.40
 
 | Metric | Baseline | Optimized | Delta | Delta % |
 |---|---:|---:|---:|---:|

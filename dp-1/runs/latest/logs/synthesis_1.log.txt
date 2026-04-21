@@ -214,7 +214,7 @@ Generating RTLIL representation for module `\tt_um_tqv_peripheral_harness'.
 Successfully finished Verilog frontend.
 
 36. Generating Graphviz representation of design.
-Writing dot description to `/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/hierarchy.dot'.
+Writing dot description to `/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/hierarchy.dot'.
 Dumping module tt_um_tqv_peripheral_harness to page 1.
 
 37. Executing HIERARCHY pass (managing design hierarchy).
@@ -4030,7 +4030,7 @@ Checking module uart_tx...
 Found and reported 0 problems.
 
 76. Generating Graphviz representation of design.
-Writing dot description to `/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/post_techmap.dot'.
+Writing dot description to `/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/post_techmap.dot'.
 Dumping module $paramod$1b0ac1a71bf6235a146509cbb11b370bdc3def37\synchronizer to page 1.
 Dumping module $paramod$e209ecfe3425492cab30fe3f17f0ed06a3da57b8\synchronizer to page 2.
 Dumping module $paramod$e280f0e9b751ed9f335b4a31654a0b08c7f1edad\spi_reg to page 3.
@@ -4885,26 +4885,26 @@ Mapping DFF cells in module `\uart_tx':
 
 86. Executing ABC pass (technology mapping using ABC).
 
-86.1. Extracting gate netlist of module `$paramod$1b0ac1a71bf6235a146509cbb11b370bdc3def37\synchronizer' to `/tmp/yosys-abc-dB3ARJ/input.blif'..
+86.1. Extracting gate netlist of module `$paramod$1b0ac1a71bf6235a146509cbb11b370bdc3def37\synchronizer' to `/tmp/yosys-abc-JQVGCE/input.blif'..
 Extracted 0 gates and 0 wires to a netlist network with 0 inputs and 0 outputs.
 Don't call ABC as there is nothing to map.
 Removing temp directory.
 
-86.2. Extracting gate netlist of module `$paramod$e209ecfe3425492cab30fe3f17f0ed06a3da57b8\synchronizer' to `/tmp/yosys-abc-jp2Zj7/input.blif'..
+86.2. Extracting gate netlist of module `$paramod$e209ecfe3425492cab30fe3f17f0ed06a3da57b8\synchronizer' to `/tmp/yosys-abc-RuVaHA/input.blif'..
 Extracted 0 gates and 0 wires to a netlist network with 0 inputs and 0 outputs.
 Don't call ABC as there is nothing to map.
 Removing temp directory.
 
-86.3. Extracting gate netlist of module `$paramod$e280f0e9b751ed9f335b4a31654a0b08c7f1edad\spi_reg' to `/tmp/yosys-abc-dgZBMu/input.blif'..
+86.3. Extracting gate netlist of module `$paramod$e280f0e9b751ed9f335b4a31654a0b08c7f1edad\spi_reg' to `/tmp/yosys-abc-PkXRLw/input.blif'..
 Extracted 259 gates and 353 wires to a netlist network with 94 inputs and 55 outputs.
 
 86.3.1. Executing ABC.
-Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-dgZBMu/abc.script 2>&1
-ABC: ABC command line: "source /tmp/yosys-abc-dgZBMu/abc.script".
+Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-PkXRLw/abc.script 2>&1
+ABC: ABC command line: "source /tmp/yosys-abc-PkXRLw/abc.script".
 ABC: 
-ABC: + read_blif /tmp/yosys-abc-dgZBMu/input.blif 
-ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib 
-ABC: Parsing finished successfully.  Parsing time =     0.13 sec
+ABC: + read_blif /tmp/yosys-abc-PkXRLw/input.blif 
+ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib 
+ABC: Parsing finished successfully.  Parsing time =     0.11 sec
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfbbn_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrbp_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrtp_2".
@@ -4922,13 +4922,13 @@ ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dlxtp_1".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_2".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_4".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_8".
-ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.19 sec
-ABC: Memory =    9.54 MB. Time =     0.19 sec
+ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.15 sec
+ABC: Memory =    9.54 MB. Time =     0.15 sec
 ABC: Warning: Detected 2 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
-ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: Setting driving cell to be "sky130_fd_sc_hd__inv_2".
 ABC: Setting output load to be 33.442001.
-ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: + fx 
 ABC: + mfs 
 ABC: + strash 
@@ -5006,7 +5006,7 @@ ABC: Path  6 --     300 : 1    1 sky130_fd_sc_hd__buf_1   A =   3.75  Df =2256.7
 ABC: Start-point = pi7 (\buffer_counter [1]).  End-point = po45 ($auto$rtlil.cc:2607:MuxGate$39509).
 ABC: + print_stats -m 
 ABC: netlist                       : i/o =   94/   55  lat =    0  nd =   170  edge =    433  area =1364.87  delay = 6.00  lev = 6
-ABC: + write_blif /tmp/yosys-abc-dgZBMu/output.blif 
+ABC: + write_blif /tmp/yosys-abc-PkXRLw/output.blif 
 
 86.3.2. Re-integrating ABC results.
 ABC RESULTS:   sky130_fd_sc_hd__or4_2 cells:        1
@@ -5039,16 +5039,16 @@ ABC RESULTS:           input signals:       94
 ABC RESULTS:          output signals:       55
 Removing temp directory.
 
-86.4. Extracting gate netlist of module `$paramod\aes_uart_streaming\BLOCK_BYTES=s32'00000000000000000000000000000001' to `/tmp/yosys-abc-MoyvYT/input.blif'..
+86.4. Extracting gate netlist of module `$paramod\aes_uart_streaming\BLOCK_BYTES=s32'00000000000000000000000000000001' to `/tmp/yosys-abc-5aQrju/input.blif'..
 Extracted 2503 gates and 3082 wires to a netlist network with 579 inputs and 572 outputs.
 
 86.4.1. Executing ABC.
-Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-MoyvYT/abc.script 2>&1
-ABC: ABC command line: "source /tmp/yosys-abc-MoyvYT/abc.script".
+Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-5aQrju/abc.script 2>&1
+ABC: ABC command line: "source /tmp/yosys-abc-5aQrju/abc.script".
 ABC: 
-ABC: + read_blif /tmp/yosys-abc-MoyvYT/input.blif 
-ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib 
-ABC: Parsing finished successfully.  Parsing time =     0.10 sec
+ABC: + read_blif /tmp/yosys-abc-5aQrju/input.blif 
+ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib 
+ABC: Parsing finished successfully.  Parsing time =     0.08 sec
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfbbn_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrbp_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrtp_2".
@@ -5066,13 +5066,13 @@ ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dlxtp_1".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_2".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_4".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_8".
-ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.14 sec
-ABC: Memory =    9.54 MB. Time =     0.14 sec
+ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.13 sec
+ABC: Memory =    9.54 MB. Time =     0.13 sec
 ABC: Warning: Detected 2 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
-ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: Setting driving cell to be "sky130_fd_sc_hd__inv_2".
 ABC: Setting output load to be 33.442001.
-ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: + fx 
 ABC: + mfs 
 ABC: + strash 
@@ -5151,7 +5151,7 @@ ABC: Path  7 --    2076 : 1    1 sky130_fd_sc_hd__buf_1    A =   3.75  Df =2377.
 ABC: Start-point = pi21 (\tx_byte_count [3]).  End-point = po282 ($auto$rtlil.cc:2607:MuxGate$40049).
 ABC: + print_stats -m 
 ABC: netlist                       : i/o =  579/  572  lat =    0  nd =  1541  edge =   2901  area =10391.94  delay = 8.00  lev = 8
-ABC: + write_blif /tmp/yosys-abc-MoyvYT/output.blif 
+ABC: + write_blif /tmp/yosys-abc-5aQrju/output.blif 
 
 86.4.2. Re-integrating ABC results.
 ABC RESULTS:   sky130_fd_sc_hd__and3b_2 cells:        2
@@ -5191,26 +5191,26 @@ ABC RESULTS:           input signals:      579
 ABC RESULTS:          output signals:      572
 Removing temp directory.
 
-86.5. Extracting gate netlist of module `$paramod\reclocking\WIDTH=s32'00000000000000000000000000000001' to `/tmp/yosys-abc-w7goNr/input.blif'..
+86.5. Extracting gate netlist of module `$paramod\reclocking\WIDTH=s32'00000000000000000000000000000001' to `/tmp/yosys-abc-aF0OZy/input.blif'..
 Extracted 0 gates and 0 wires to a netlist network with 0 inputs and 0 outputs.
 Don't call ABC as there is nothing to map.
 Removing temp directory.
 
-86.6. Extracting gate netlist of module `$paramod\reclocking\WIDTH=s32'00000000000000000000000000001000' to `/tmp/yosys-abc-CXptCZ/input.blif'..
+86.6. Extracting gate netlist of module `$paramod\reclocking\WIDTH=s32'00000000000000000000000000001000' to `/tmp/yosys-abc-NI9mGD/input.blif'..
 Extracted 0 gates and 0 wires to a netlist network with 0 inputs and 0 outputs.
 Don't call ABC as there is nothing to map.
 Removing temp directory.
 
-86.7. Extracting gate netlist of module `$paramod\secure_uart_peripheral\AES_BLOCK_BYTES=s32'00000000000000000000000000000001' to `/tmp/yosys-abc-AIaKrx/input.blif'..
+86.7. Extracting gate netlist of module `$paramod\secure_uart_peripheral\AES_BLOCK_BYTES=s32'00000000000000000000000000000001' to `/tmp/yosys-abc-2I63mI/input.blif'..
 Extracted 563 gates and 795 wires to a netlist network with 231 inputs and 205 outputs.
 
 86.7.1. Executing ABC.
-Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-AIaKrx/abc.script 2>&1
-ABC: ABC command line: "source /tmp/yosys-abc-AIaKrx/abc.script".
+Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-2I63mI/abc.script 2>&1
+ABC: ABC command line: "source /tmp/yosys-abc-2I63mI/abc.script".
 ABC: 
-ABC: + read_blif /tmp/yosys-abc-AIaKrx/input.blif 
-ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib 
-ABC: Parsing finished successfully.  Parsing time =     0.09 sec
+ABC: + read_blif /tmp/yosys-abc-2I63mI/input.blif 
+ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib 
+ABC: Parsing finished successfully.  Parsing time =     0.10 sec
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfbbn_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrbp_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrtp_2".
@@ -5228,13 +5228,13 @@ ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dlxtp_1".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_2".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_4".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_8".
-ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.13 sec
+ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.13 sec
 ABC: Memory =    9.54 MB. Time =     0.13 sec
 ABC: Warning: Detected 2 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
-ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: Setting driving cell to be "sky130_fd_sc_hd__inv_2".
 ABC: Setting output load to be 33.442001.
-ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: + fx 
 ABC: + mfs 
 ABC: + strash 
@@ -5311,7 +5311,7 @@ ABC: Path  5 --     842 : 1    1 sky130_fd_sc_hd__buf_1   A =   3.75  Df =2205.7
 ABC: Start-point = pi0 (\address [1]).  End-point = po153 ($auto$rtlil.cc:2607:MuxGate$40855).
 ABC: + print_stats -m 
 ABC: netlist                       : i/o =  231/  205  lat =    0  nd =   515  edge =   1220  area =3998.15  delay = 7.00  lev = 7
-ABC: + write_blif /tmp/yosys-abc-AIaKrx/output.blif 
+ABC: + write_blif /tmp/yosys-abc-2I63mI/output.blif 
 
 86.7.2. Re-integrating ABC results.
 ABC RESULTS:   sky130_fd_sc_hd__or4b_2 cells:        1
@@ -5343,16 +5343,16 @@ ABC RESULTS:           input signals:      231
 ABC RESULTS:          output signals:      205
 Removing temp directory.
 
-86.8. Extracting gate netlist of module `\falling_edge_detector' to `/tmp/yosys-abc-qRXpF8/input.blif'..
+86.8. Extracting gate netlist of module `\falling_edge_detector' to `/tmp/yosys-abc-S3HHzP/input.blif'..
 Extracted 2 gates and 5 wires to a netlist network with 3 inputs and 2 outputs.
 
 86.8.1. Executing ABC.
-Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-qRXpF8/abc.script 2>&1
-ABC: ABC command line: "source /tmp/yosys-abc-qRXpF8/abc.script".
+Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-S3HHzP/abc.script 2>&1
+ABC: ABC command line: "source /tmp/yosys-abc-S3HHzP/abc.script".
 ABC: 
-ABC: + read_blif /tmp/yosys-abc-qRXpF8/input.blif 
-ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib 
-ABC: Parsing finished successfully.  Parsing time =     0.10 sec
+ABC: + read_blif /tmp/yosys-abc-S3HHzP/input.blif 
+ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib 
+ABC: Parsing finished successfully.  Parsing time =     0.08 sec
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfbbn_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrbp_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrtp_2".
@@ -5370,13 +5370,13 @@ ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dlxtp_1".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_2".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_4".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_8".
-ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.15 sec
-ABC: Memory =    9.54 MB. Time =     0.15 sec
+ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.11 sec
+ABC: Memory =    9.54 MB. Time =     0.11 sec
 ABC: Warning: Detected 2 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
-ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: Setting driving cell to be "sky130_fd_sc_hd__inv_2".
 ABC: Setting output load to be 33.442001.
-ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: + fx 
 ABC: + mfs 
 ABC: + strash 
@@ -5450,7 +5450,7 @@ ABC: Path  2 --       9 : 1    1 sky130_fd_sc_hd__buf_1  A =   3.75  Df = 532.2 
 ABC: Start-point = pi2 (\ena).  End-point = po1 ($auto$rtlil.cc:2607:MuxGate$40959).
 ABC: + print_stats -m 
 ABC: netlist                       : i/o =    3/    2  lat =    0  nd =     4  edge =      7  area =27.52  delay = 2.00  lev = 2
-ABC: + write_blif /tmp/yosys-abc-qRXpF8/output.blif 
+ABC: + write_blif /tmp/yosys-abc-S3HHzP/output.blif 
 
 86.8.2. Re-integrating ABC results.
 ABC RESULTS:   sky130_fd_sc_hd__and2b_2 cells:        1
@@ -5461,16 +5461,16 @@ ABC RESULTS:           input signals:        3
 ABC RESULTS:          output signals:        2
 Removing temp directory.
 
-86.9. Extracting gate netlist of module `\rising_edge_detector' to `/tmp/yosys-abc-4kXmJK/input.blif'..
+86.9. Extracting gate netlist of module `\rising_edge_detector' to `/tmp/yosys-abc-x3k4pX/input.blif'..
 Extracted 2 gates and 5 wires to a netlist network with 3 inputs and 2 outputs.
 
 86.9.1. Executing ABC.
-Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-4kXmJK/abc.script 2>&1
-ABC: ABC command line: "source /tmp/yosys-abc-4kXmJK/abc.script".
+Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-x3k4pX/abc.script 2>&1
+ABC: ABC command line: "source /tmp/yosys-abc-x3k4pX/abc.script".
 ABC: 
-ABC: + read_blif /tmp/yosys-abc-4kXmJK/input.blif 
-ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib 
-ABC: Parsing finished successfully.  Parsing time =     0.10 sec
+ABC: + read_blif /tmp/yosys-abc-x3k4pX/input.blif 
+ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib 
+ABC: Parsing finished successfully.  Parsing time =     0.08 sec
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfbbn_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrbp_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrtp_2".
@@ -5488,13 +5488,13 @@ ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dlxtp_1".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_2".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_4".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_8".
-ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.15 sec
-ABC: Memory =    9.54 MB. Time =     0.15 sec
+ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.11 sec
+ABC: Memory =    9.54 MB. Time =     0.11 sec
 ABC: Warning: Detected 2 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
-ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: Setting driving cell to be "sky130_fd_sc_hd__inv_2".
 ABC: Setting output load to be 33.442001.
-ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: + fx 
 ABC: + mfs 
 ABC: + strash 
@@ -5568,7 +5568,7 @@ ABC: Path  2 --       9 : 1    1 sky130_fd_sc_hd__buf_1  A =   3.75  Df = 532.2 
 ABC: Start-point = pi2 (\ena).  End-point = po1 ($auto$rtlil.cc:2607:MuxGate$40961).
 ABC: + print_stats -m 
 ABC: netlist                       : i/o =    3/    2  lat =    0  nd =     4  edge =      7  area =27.52  delay = 2.00  lev = 2
-ABC: + write_blif /tmp/yosys-abc-4kXmJK/output.blif 
+ABC: + write_blif /tmp/yosys-abc-x3k4pX/output.blif 
 
 86.9.2. Re-integrating ABC results.
 ABC RESULTS:   sky130_fd_sc_hd__and2b_2 cells:        1
@@ -5579,21 +5579,21 @@ ABC RESULTS:           input signals:        3
 ABC RESULTS:          output signals:        2
 Removing temp directory.
 
-86.10. Extracting gate netlist of module `\tqvp_basit_uart' to `/tmp/yosys-abc-5cxqDn/input.blif'..
+86.10. Extracting gate netlist of module `\tqvp_basit_uart' to `/tmp/yosys-abc-6gNjW5/input.blif'..
 Extracted 0 gates and 0 wires to a netlist network with 0 inputs and 0 outputs.
 Don't call ABC as there is nothing to map.
 Removing temp directory.
 
-86.11. Extracting gate netlist of module `\tt_um_tqv_peripheral_harness' to `/tmp/yosys-abc-WK3Fx0/input.blif'..
+86.11. Extracting gate netlist of module `\tt_um_tqv_peripheral_harness' to `/tmp/yosys-abc-T3HKse/input.blif'..
 Extracted 32 gates and 62 wires to a netlist network with 30 inputs and 29 outputs.
 
 86.11.1. Executing ABC.
-Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-WK3Fx0/abc.script 2>&1
-ABC: ABC command line: "source /tmp/yosys-abc-WK3Fx0/abc.script".
+Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-T3HKse/abc.script 2>&1
+ABC: ABC command line: "source /tmp/yosys-abc-T3HKse/abc.script".
 ABC: 
-ABC: + read_blif /tmp/yosys-abc-WK3Fx0/input.blif 
-ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib 
-ABC: Parsing finished successfully.  Parsing time =     0.10 sec
+ABC: + read_blif /tmp/yosys-abc-T3HKse/input.blif 
+ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib 
+ABC: Parsing finished successfully.  Parsing time =     0.09 sec
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfbbn_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrbp_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrtp_2".
@@ -5611,13 +5611,13 @@ ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dlxtp_1".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_2".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_4".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_8".
-ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.16 sec
-ABC: Memory =    9.54 MB. Time =     0.16 sec
+ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.13 sec
+ABC: Memory =    9.54 MB. Time =     0.13 sec
 ABC: Warning: Detected 2 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
-ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: Setting driving cell to be "sky130_fd_sc_hd__inv_2".
 ABC: Setting output load to be 33.442001.
-ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: + fx 
 ABC: + mfs 
 ABC: + strash 
@@ -5692,7 +5692,7 @@ ABC: Path  3 --      65 : 1    1 sky130_fd_sc_hd__buf_1  A =   3.75  Df = 834.9 
 ABC: Start-point = pi2 (\txn_n [0]).  End-point = po2 (\data_read_n [0]).
 ABC: + print_stats -m 
 ABC: netlist                       : i/o =   30/   29  lat =    0  nd =    50  edge =     90  area =312.78  delay = 3.00  lev = 3
-ABC: + write_blif /tmp/yosys-abc-WK3Fx0/output.blif 
+ABC: + write_blif /tmp/yosys-abc-T3HKse/output.blif 
 
 86.11.2. Re-integrating ABC results.
 ABC RESULTS:   sky130_fd_sc_hd__nand3b_2 cells:        2
@@ -5706,16 +5706,16 @@ ABC RESULTS:           input signals:       30
 ABC RESULTS:          output signals:       29
 Removing temp directory.
 
-86.12. Extracting gate netlist of module `\uart_baud_generator' to `/tmp/yosys-abc-CfeOrE/input.blif'..
+86.12. Extracting gate netlist of module `\uart_baud_generator' to `/tmp/yosys-abc-6d6kOn/input.blif'..
 Extracted 168 gates and 189 wires to a netlist network with 21 inputs and 17 outputs.
 
 86.12.1. Executing ABC.
-Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-CfeOrE/abc.script 2>&1
-ABC: ABC command line: "source /tmp/yosys-abc-CfeOrE/abc.script".
+Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-6d6kOn/abc.script 2>&1
+ABC: ABC command line: "source /tmp/yosys-abc-6d6kOn/abc.script".
 ABC: 
-ABC: + read_blif /tmp/yosys-abc-CfeOrE/input.blif 
-ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib 
-ABC: Parsing finished successfully.  Parsing time =     0.12 sec
+ABC: + read_blif /tmp/yosys-abc-6d6kOn/input.blif 
+ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib 
+ABC: Parsing finished successfully.  Parsing time =     0.11 sec
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfbbn_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrbp_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrtp_2".
@@ -5733,13 +5733,13 @@ ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dlxtp_1".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_2".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_4".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_8".
-ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.17 sec
+ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.17 sec
 ABC: Memory =    9.54 MB. Time =     0.17 sec
 ABC: Warning: Detected 2 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
-ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: Setting driving cell to be "sky130_fd_sc_hd__inv_2".
 ABC: Setting output load to be 33.442001.
-ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: + fx 
 ABC: Abc_NtkFastExtract: Nodes have duplicated fanins. FX is not performed.
 ABC: + mfs 
@@ -5819,7 +5819,7 @@ ABC: Path  7 --      67 : 1    1 sky130_fd_sc_hd__buf_1  A =   3.75  Df =2122.6 
 ABC: Start-point = pi0 (\baud_sel [3]).  End-point = po0 (\baud_tick).
 ABC: + print_stats -m 
 ABC: netlist                       : i/o =   21/   17  lat =    0  nd =    69  edge =    194  area =546.81  delay = 7.00  lev = 7
-ABC: + write_blif /tmp/yosys-abc-CfeOrE/output.blif 
+ABC: + write_blif /tmp/yosys-abc-6d6kOn/output.blif 
 
 86.12.2. Re-integrating ABC results.
 ABC RESULTS:   sky130_fd_sc_hd__or4bb_2 cells:        1
@@ -5856,16 +5856,16 @@ ABC RESULTS:           input signals:       21
 ABC RESULTS:          output signals:       17
 Removing temp directory.
 
-86.13. Extracting gate netlist of module `\uart_rx' to `/tmp/yosys-abc-yxULSj/input.blif'..
+86.13. Extracting gate netlist of module `\uart_rx' to `/tmp/yosys-abc-B5TSHy/input.blif'..
 Extracted 149 gates and 180 wires to a netlist network with 31 inputs and 30 outputs.
 
 86.13.1. Executing ABC.
-Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-yxULSj/abc.script 2>&1
-ABC: ABC command line: "source /tmp/yosys-abc-yxULSj/abc.script".
+Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-B5TSHy/abc.script 2>&1
+ABC: ABC command line: "source /tmp/yosys-abc-B5TSHy/abc.script".
 ABC: 
-ABC: + read_blif /tmp/yosys-abc-yxULSj/input.blif 
-ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib 
-ABC: Parsing finished successfully.  Parsing time =     0.10 sec
+ABC: + read_blif /tmp/yosys-abc-B5TSHy/input.blif 
+ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib 
+ABC: Parsing finished successfully.  Parsing time =     0.11 sec
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfbbn_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrbp_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrtp_2".
@@ -5883,13 +5883,13 @@ ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dlxtp_1".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_2".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_4".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_8".
-ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.15 sec
-ABC: Memory =    9.54 MB. Time =     0.15 sec
+ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.16 sec
+ABC: Memory =    9.54 MB. Time =     0.16 sec
 ABC: Warning: Detected 2 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
-ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: Setting driving cell to be "sky130_fd_sc_hd__inv_2".
 ABC: Setting output load to be 33.442001.
-ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: + fx 
 ABC: + mfs 
 ABC: + strash 
@@ -5966,7 +5966,7 @@ ABC: Path  5 --      83 : 1    1 sky130_fd_sc_hd__buf_1   A =   3.75  Df =1841.9
 ABC: Start-point = pi2 (\sample_cnt [0]).  End-point = po6 ($auto$rtlil.cc:2607:MuxGate$40967).
 ABC: + print_stats -m 
 ABC: netlist                       : i/o =   31/   30  lat =    0  nd =    81  edge =    208  area =653.09  delay = 5.00  lev = 5
-ABC: + write_blif /tmp/yosys-abc-yxULSj/output.blif 
+ABC: + write_blif /tmp/yosys-abc-B5TSHy/output.blif 
 
 86.13.2. Re-integrating ABC results.
 ABC RESULTS:   sky130_fd_sc_hd__nand3_2 cells:        1
@@ -6002,15 +6002,15 @@ ABC RESULTS:           input signals:       31
 ABC RESULTS:          output signals:       30
 Removing temp directory.
 
-86.14. Extracting gate netlist of module `\uart_tx' to `/tmp/yosys-abc-jYMYD0/input.blif'..
+86.14. Extracting gate netlist of module `\uart_tx' to `/tmp/yosys-abc-GKqg0K/input.blif'..
 Extracted 80 gates and 107 wires to a netlist network with 27 inputs and 19 outputs.
 
 86.14.1. Executing ABC.
-Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-jYMYD0/abc.script 2>&1
-ABC: ABC command line: "source /tmp/yosys-abc-jYMYD0/abc.script".
+Running ABC command: "/build/bin/yosys-abc" -s -f /tmp/yosys-abc-GKqg0K/abc.script 2>&1
+ABC: ABC command line: "source /tmp/yosys-abc-GKqg0K/abc.script".
 ABC: 
-ABC: + read_blif /tmp/yosys-abc-jYMYD0/input.blif 
-ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib 
+ABC: + read_blif /tmp/yosys-abc-GKqg0K/input.blif 
+ABC: + read_lib -w /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib 
 ABC: Parsing finished successfully.  Parsing time =     0.11 sec
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfbbn_2".
 ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dfrbp_2".
@@ -6029,13 +6029,13 @@ ABC: Scl_LibertyReadGenlib() skipped sequential cell "sky130_fd_sc_hd__dlxtp_1".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_2".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_4".
 ABC: Scl_LibertyReadGenlib() skipped three-state cell "sky130_fd_sc_hd__ebufn_8".
-ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.16 sec
+ABC: Library "sky130A_merged" from "/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/trimmed.lib" has 175 cells (17 skipped: 14 seq; 3 tri-state; 0 no func; 0 dont_use).  Time =     0.16 sec
 ABC: Memory =    9.54 MB. Time =     0.16 sec
 ABC: Warning: Detected 2 multi-output gates (for example, "sky130_fd_sc_hd__fa_1").
-ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr -v /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: Setting driving cell to be "sky130_fd_sc_hd__inv_2".
 ABC: Setting output load to be 33.442001.
-ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/synthesis.sdc 
+ABC: + read_constr /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/synthesis.sdc 
 ABC: + fx 
 ABC: + mfs 
 ABC: + strash 
@@ -6112,7 +6112,7 @@ ABC: Path  5 --      85 : 1    1 sky130_fd_sc_hd__buf_1   A =   3.75  Df =1442.5
 ABC: Start-point = pi0 (\state [0]).  End-point = po9 ($auto$rtlil.cc:2607:MuxGate$41029).
 ABC: + print_stats -m 
 ABC: netlist                       : i/o =   27/   19  lat =    0  nd =    67  edge =    168  area =545.51  delay = 6.00  lev = 6
-ABC: + write_blif /tmp/yosys-abc-jYMYD0/output.blif 
+ABC: + write_blif /tmp/yosys-abc-GKqg0K/output.blif 
 
 86.14.2. Re-integrating ABC results.
 ABC RESULTS:   sky130_fd_sc_hd__or2_2 cells:        2
@@ -7034,11 +7034,11 @@ Dumping module `\uart_baud_generator'.
 Dumping module `\uart_rx'.
 Dumping module `\uart_tx'.
 
-95. Executing Liberty frontend: /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/tmp/synthesis/1-sky130_fd_sc_hd__tt_025C_1v80.no_pg.lib
+95. Executing Liberty frontend: /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/tmp/synthesis/1-sky130_fd_sc_hd__tt_025C_1v80.no_pg.lib
 Imported 428 cell types from liberty file.
 
-96. Executing Verilog-2005 frontend: /openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/results/synthesis/tt_um_tqv_peripheral_harness.v
-Parsing SystemVerilog input from `/openlane/designs/dp1_uart/runs/RUN_2026.04.21_13.25.50/results/synthesis/tt_um_tqv_peripheral_harness.v' to AST representation.
+96. Executing Verilog-2005 frontend: /openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/results/synthesis/tt_um_tqv_peripheral_harness.v
+Parsing SystemVerilog input from `/openlane/designs/dp1_uart/runs/RUN_2026.04.21_14.53.40/results/synthesis/tt_um_tqv_peripheral_harness.v' to AST representation.
 Generating RTLIL representation for module `\$paramod$1b0ac1a71bf6235a146509cbb11b370bdc3def37\synchronizer'.
 Generating RTLIL representation for module `\$paramod$e209ecfe3425492cab30fe3f17f0ed06a3da57b8\synchronizer'.
 Generating RTLIL representation for module `\$paramod$e280f0e9b751ed9f335b4a31654a0b08c7f1edad\spi_reg'.
@@ -7570,7 +7570,7 @@ Found and reported 0 problems.
 
 98. Executing ABC pass (technology mapping using ABC).
 
-98.1. Extracting gate netlist of module `\tt_um_tqv_peripheral_harness' to `/tmp/yosys-abc-OWr4YZ/input.blif'..
+98.1. Extracting gate netlist of module `\tt_um_tqv_peripheral_harness' to `/tmp/yosys-abc-ltzn5K/input.blif'..
 Extracted 0 gates and 0 wires to a netlist network with 0 inputs and 0 outputs.
 Don't call ABC as there is nothing to map.
 Removing temp directory.
@@ -7680,6 +7680,6 @@ Found and reported 0 problems.
 Dumping module `\tt_um_tqv_peripheral_harness'.
 
 Warnings: 341 unique messages, 346 total
-End of script. Logfile hash: af7d904717, CPU: user 20.75s system 0.42s, MEM: 114.54 MB peak
+End of script. Logfile hash: b4a4374860, CPU: user 19.05s system 0.34s, MEM: 114.76 MB peak
 Yosys 0.30+48 (git sha1 14d50a176d5, gcc 8.3.1 -fPIC -Os)
-Time spent: 28% 4x abc (8 sec), 14% 4x write_verilog (4 sec), ...
+Time spent: 27% 4x abc (7 sec), 14% 4x write_verilog (3 sec), ...
