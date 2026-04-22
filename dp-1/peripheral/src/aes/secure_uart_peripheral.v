@@ -26,6 +26,8 @@
  * 0x2C - AES_KEY1:     Key [95:64]
  * 0x30 - AES_KEY2:     Key [63:32]
  * 0x34 - AES_KEY3:     Key [31:0]
+ * 0x38 - SEC_CTRL:     Write 0xC0DEA55A then 0x5AFEF00D to unlock secure writes
+ * 0x3C - SEC_STATUS:   [0] unlocked, [1] stage1_seen, [9:2] violation_count, [17:10] timeout
  */
 
 `default_nettype none
@@ -74,6 +76,12 @@ module secure_uart_peripheral #(
     localparam ADDR_AES_KEY1    = 6'h2C;
     localparam ADDR_AES_KEY2    = 6'h30;
     localparam ADDR_AES_KEY3    = 6'h34;
+    localparam ADDR_SEC_CTRL    = 6'h38;
+    localparam ADDR_SEC_STATUS  = 6'h3C;
+
+    localparam [31:0] SEC_KEY_STAGE1 = 32'hC0DE_A55A;
+    localparam [31:0] SEC_KEY_STAGE2 = 32'h5AFE_F00D;
+    localparam [7:0]  SEC_UNLOCK_TIMEOUT = 8'd64;
     
     wire bus_write = (data_write_n == 2'b00);
     wire bus_read = (data_read_n == 2'b00);
@@ -87,12 +95,18 @@ module secure_uart_peripheral #(
     reg       aes_enable_reg;
     reg [127:0] aes_key_reg;
     reg       aes_key_ready;
+    reg       sec_unlocked;
+    reg       sec_key_stage1_seen;
+    reg [7:0] sec_violation_count;
+    reg [7:0] sec_unlock_timer;
     
     wire [3:0] baud_sel = uart_ctrl_reg[3:0];
     wire       uart_tx_en = uart_ctrl_reg[4];
     wire       uart_rx_en = uart_ctrl_reg[5];
     wire       aes_enable = aes_enable_reg;
     wire       baud_enable;
+    wire       sec_sensitive_write;
+    wire       sec_write_allowed;
     
     // =========================================================================
     // UART Core Modules
@@ -219,6 +233,14 @@ module secure_uart_peripheral #(
     
     // Keep baud generation active only when UART is enabled or datapaths are busy.
     assign baud_enable = uart_tx_en || uart_rx_en || uart_tx_busy || aes_tx_busy || aes_rx_busy;
+    assign sec_sensitive_write = bus_write && (
+        address == ADDR_AES_CTRL ||
+        address == ADDR_AES_KEY0 ||
+        address == ADDR_AES_KEY1 ||
+        address == ADDR_AES_KEY2 ||
+        address == ADDR_AES_KEY3
+    );
+    assign sec_write_allowed = (!sec_sensitive_write) || sec_unlocked;
 
     // Register Write
     always @(posedge clk or negedge rst_n) begin
@@ -230,28 +252,75 @@ module secure_uart_peripheral #(
             aes_key_ready <= 1'b0;
             cpu_tx_write <= 1'b0;
             cpu_tx_data <= 8'h0;
+            sec_unlocked <= 1'b0;
+            sec_key_stage1_seen <= 1'b0;
+            sec_violation_count <= 8'h0;
+            sec_unlock_timer <= 8'h0;
         end else begin
             cpu_tx_write <= 1'b0;
+
+            if (sec_unlocked) begin
+                if (sec_unlock_timer != 8'h0)
+                    sec_unlock_timer <= sec_unlock_timer - 1'b1;
+                if (sec_unlock_timer == 8'h1)
+                    sec_unlocked <= 1'b0;
+            end
             
             if (bus_write) begin
-                case (address)
-                    ADDR_UART_CTRL: uart_ctrl_reg <= data_in[5:0];
-                    ADDR_INT_EN: int_en_reg <= data_in[1:0];
-                    
-                    ADDR_TX_DATA: begin
-                        cpu_tx_data <= data_in[7:0];
-                        cpu_tx_write <= 1'b1;
-                    end
-                    
-                    ADDR_AES_CTRL: aes_enable_reg <= data_in[0];
-                    ADDR_AES_KEY0: aes_key_reg[127:96] <= data_in;
-                    ADDR_AES_KEY1: aes_key_reg[95:64] <= data_in;
-                    ADDR_AES_KEY2: aes_key_reg[63:32] <= data_in;
-                    ADDR_AES_KEY3: begin
-                        aes_key_reg[31:0] <= data_in;
-                        aes_key_ready <= 1'b1;
-                    end
-                endcase
+                if (!sec_write_allowed) begin
+                    if (sec_violation_count != 8'hFF)
+                        sec_violation_count <= sec_violation_count + 1'b1;
+                end else begin
+                    case (address)
+                        // CM#3: Reject baud_sel=0 to prevent zero-divisor DoS (CWE-400)
+                        ADDR_UART_CTRL: if (data_in[3:0] != 4'h0) uart_ctrl_reg <= data_in[5:0];
+                        ADDR_INT_EN: int_en_reg <= data_in[1:0];
+                        
+                        ADDR_TX_DATA: begin
+                            cpu_tx_data <= data_in[7:0];
+                            cpu_tx_write <= 1'b1;
+                        end
+
+                        ADDR_SEC_CTRL: begin
+                            if (data_in == 32'h0) begin
+                                sec_unlocked <= 1'b0;
+                                sec_key_stage1_seen <= 1'b0;
+                                sec_unlock_timer <= 8'h0;
+                            end else if (sec_unlocked && data_in == SEC_KEY_STAGE2) begin
+                                // Allow keep-alive refresh when host drives write low for >1 cycle.
+                                sec_unlock_timer <= SEC_UNLOCK_TIMEOUT;
+                            end else if (!sec_key_stage1_seen) begin
+                                if (data_in == SEC_KEY_STAGE1) begin
+                                    sec_key_stage1_seen <= 1'b1;
+                                end else if (sec_violation_count != 8'hFF) begin
+                                    sec_violation_count <= sec_violation_count + 1'b1;
+                                end
+                            end else begin
+                                if (data_in == SEC_KEY_STAGE2) begin
+                                    sec_unlocked <= 1'b1;
+                                    sec_key_stage1_seen <= 1'b0;
+                                    sec_unlock_timer <= SEC_UNLOCK_TIMEOUT;
+                                end else if (data_in == SEC_KEY_STAGE1) begin
+                                    // Keep waiting for stage2 on repeated stage1 writes.
+                                    sec_key_stage1_seen <= 1'b1;
+                                end else begin
+                                    sec_key_stage1_seen <= 1'b0;
+                                    if (sec_violation_count != 8'hFF)
+                                        sec_violation_count <= sec_violation_count + 1'b1;
+                                end
+                            end
+                        end
+                        
+                        ADDR_AES_CTRL: aes_enable_reg <= data_in[0];
+                        ADDR_AES_KEY0: aes_key_reg[127:96] <= data_in;
+                        ADDR_AES_KEY1: aes_key_reg[95:64] <= data_in;
+                        ADDR_AES_KEY2: aes_key_reg[63:32] <= data_in;
+                        ADDR_AES_KEY3: begin
+                            aes_key_reg[31:0] <= data_in;
+                            aes_key_ready <= 1'b1;
+                        end
+                    endcase
+                end
             end
         end
     end
@@ -287,10 +356,13 @@ module secure_uart_peripheral #(
                         data_out <= {29'h0, aes_key_ready, aes_rx_busy, aes_tx_busy};
                     end
                     
-                    ADDR_AES_KEY0: data_out <= aes_key_reg[127:96];
-                    ADDR_AES_KEY1: data_out <= aes_key_reg[95:64];
-                    ADDR_AES_KEY2: data_out <= aes_key_reg[63:32];
-                    ADDR_AES_KEY3: data_out <= aes_key_reg[31:0];
+                    // CM#2: Mask AES key read-back while locked (CWE-312: Cleartext Storage)
+                    // Key registers return 0x00000000 unless the caller has unlocked via SEC_CTRL.
+                    ADDR_AES_KEY0: data_out <= sec_unlocked ? aes_key_reg[127:96] : 32'h0;
+                    ADDR_AES_KEY1: data_out <= sec_unlocked ? aes_key_reg[95:64]  : 32'h0;
+                    ADDR_AES_KEY2: data_out <= sec_unlocked ? aes_key_reg[63:32]  : 32'h0;
+                    ADDR_AES_KEY3: data_out <= sec_unlocked ? aes_key_reg[31:0]   : 32'h0;
+                    ADDR_SEC_STATUS: data_out <= {14'h0, sec_unlock_timer, sec_violation_count, sec_key_stage1_seen, sec_unlocked};
                     
                     default: data_out <= 32'h0;
                 endcase
