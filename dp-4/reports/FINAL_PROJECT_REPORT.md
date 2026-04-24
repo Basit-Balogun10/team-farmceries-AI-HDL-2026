@@ -1,78 +1,110 @@
 # Final Project Report (DP1 to DP4)
 
 ## 1. Executive Summary
-This project implemented and hardened a TinyQV-based peripheral subsystem and carried the design from RTL through physical implementation and sign-off.
+Team Farmceries built a secure UART + AES-128 peripheral subsystem on top of the TinyQV integration framework, then carried that design through optimization, security hardening, and physical sign-off.
 
-The DP4 objective was to generate a manufacturable layout package with reproducible OpenLANE runs and complete sign-off evidence.
+The central DP-4 objective was to convert our DP-3 hardened RTL into a submission-grade tapeout package without losing security intent or reproducibility.
 
-Outcome: a full DP4 package was produced with final GDS, gate-level netlists, constraints, DRC/LVS reports, STA reports, and measured PPA artifacts.
+Final outcome: a complete DP-4 package with final GDSII, promoted netlists and constraints, sign-off evidence (DRC/LVS/STA), and a run-traceable physical implementation history.
 
 ## 2. Timeline and Milestones
-- DP1: baseline synthesis flow and first physical implementation path established.
-- DP2: optimization workflow and measured PPA comparison infrastructure added.
-- DP3: security hardening integrated and validated with measured hardened metrics.
-- DP4: full netlist-to-chip package assembled with sign-off reports and reproducible run capture.
+- DP1: We stood up the team-built UART path and integrated secure UART datapath support, establishing the first reproducible OpenLANE flow in this repository.
+- DP2: We added experiment automation and explicit floorplan/density control to stabilize runs and quantify before/after PPA changes.
+- DP3: We moved from performance-only thinking to adversarial thinking, implementing three concrete hardware countermeasures and validating them with 9/9 passing security/regression tests.
+- DP4: We taped out the hardened design path, not a reduced-complexity detour, and packaged the final manufacturability artifacts in one canonical run set.
 
 ## 3. Architecture and Security Design
-The design integrates a TinyQV-oriented peripheral harness centered on secure UART streaming and SPI-facing logic. The DP3 hardening changes were preserved into DP4 implementation.
+The design point for DP-4 is the same security-hardened architecture produced in DP-3:
+- `secure_uart_peripheral.v` as the control and register boundary.
+- `aes_uart_streaming.v` as the encrypted TX/RX datapath bridge.
+- TinyQV harness integration preserved from earlier phases.
 
-Security-oriented behaviors include bounded configuration behavior and hardened control paths introduced during DP3. DP4 focused on preserving those semantics through physical implementation without functional regressions in sign-off timing checks.
+Security behaviors intentionally carried into tapeout:
+- CM#1: two-stage authenticated write lock for sensitive AES control/key registers.
+- CM#2: AES key readback masking when locked.
+- CM#3: baud divisor clamp to reject zero-divisor DoS writes.
+
+DP-4 success criterion for architecture was continuity: security logic must survive physical flow without introducing functional or sign-off regressions that undermine DP-3 security claims.
 
 ## 4. Physical Design Flow (DP4)
-Flow execution used OpenLANE through the wrapper script at dp-4/scripts/run_dp4_tapeout.sh, which invokes dp-1/scripts/run_synthesis_and_ppa.sh and snapshots outputs into DP4 folders.
+Execution model:
+- `dp-4/scripts/run_dp4_tapeout.sh` orchestrates the flow.
+- It reuses the proven synthesis + OpenLANE pipeline from `dp-1/scripts/run_synthesis_and_ppa.sh`.
+- It promotes key outputs directly into DP-4 submission folders for traceability.
 
 Final selected run:
-- Run ID: RUN_2026.04.24_00.19.16
-- AES block mode: 1 byte
-- DIE_AREA: 0 0 320.00 240.00
-- PL_TARGET_DENSITY: 0.61
+- Run ID: `RUN_2026.04.24_00.19.16`
+- `AES_BLOCK_BYTES=1`
+- `DIE_AREA="0 0 320.00 240.00"`
+- `PL_TARGET_DENSITY=0.61`
 
-Additional closure sweeps were executed with relaxed floorplan and density settings, then discarded from final package to keep a single canonical final run.
+Why this run was selected:
+- It converged cleanly for DRC/LVS and sign-off STA summary.
+- It offered the smallest area among the successful DP-4 sweep candidates.
+- It matches the hardened, reproducible low-resource configuration used to validate DP-3 overhead.
 
 ## 5. Sign-off Results
-- DRC: clean (COUNT: 0)
-- LVS: clean (Total errors = 0)
-- STA summary: tns 0.00, wns 0.00, worst setup slack 4.44, worst hold slack 0.31
+- DRC: clean, COUNT = 0.
+- LVS: clean, Total errors = 0.
+- STA summary: `tns 0.00`, `wns 0.00`, worst setup slack `4.44`, worst hold slack `0.31`.
 
-Observed warning class:
-- max fanout violations in the STA checks report
-
-Rationale: these do not appear as setup/hold timing violations in the final STA summary and did not block DRC/LVS-clean completion.
+Important disclosure:
+- The STA checks report still contains max-fanout violators and unconstrained-path sections.
+- We treat these as documented residual checks, not hidden waivers.
+- Our timing closure claim is anchored to the sign-off STA summary values above.
 
 ## 6. Final PPA Metrics
-From dp-4/results/RUN_2026.04.24_00.19.16/metrics.csv:
-- DIEAREA_mm^2: 0.0768
-- synth_cell_count: 3594
-- wns: -10.13
-- tns: -8908.4
-- power_typical_total_uW: 0.008380027
+From `dp-4/results/RUN_2026.04.24_00.19.16/metrics.csv`:
+- `DIEAREA_mm^2 = 0.0768`
+- `synth_cell_count = 3594`
+- `wns = -10.13`
+- `tns = -8908.4`
+- `power_typical_total_uW = 0.008380027`
 
-Note: OpenLANE metrics.csv timing fields differ from final sign-off STA summary reports. Submission timing conclusions are taken from sign-off STA reports in dp-4/signoff.
+Interpretation discipline used in this project:
+- `metrics.csv` is tracked for PPA comparability across DP-2/DP-3/DP-4.
+- Final closure statements are taken from sign-off STA reports in `dp-4/signoff/`.
+- This distinction is deliberate and prevents misreporting timing status.
 
 ## 7. Challenges and Trade-offs
-Primary challenge: placement-density sensitivity and convergence constraints under reduced-resource hardened configuration.
+Main project-specific challenge:
+- Maintaining security-hardened behavior while chasing physical convergence in a constrained open-source flow.
 
-Trade-off: preserving the proven low-resource DP3-hardened mode (AES block bytes = 1) prioritized reproducibility against larger-floorplan variants that did not improve sign-off quality.
+What we learned from our own runs:
+- Small placement-density changes can flip convergence behavior.
+- Larger die sweeps did not materially improve sign-off quality for our hardened design.
+- Reproducibility and evidentiary clarity were more valuable than chasing marginal alternative knobs late in the cycle.
+
+Key trade-off decision:
+- We prioritized a single canonical, security-aligned final run over keeping multiple near-duplicate runs in submission folders.
 
 ## 8. Final Tapeout Package
-- Final GDS: dp-4/gds/RUN_2026.04.24_00.19.16_tt_um_tqv_peripheral_harness.gds
+- Final GDS:
+	- `dp-4/gds/RUN_2026.04.24_00.19.16_tt_um_tqv_peripheral_harness.gds`
 - Final netlists:
-	- dp-4/netlist/RUN_2026.04.24_00.19.16_tt_um_tqv_peripheral_harness.v
-	- dp-4/netlist/RUN_2026.04.24_00.19.16_tt_um_tqv_peripheral_harness.nl.v
+	- `dp-4/netlist/RUN_2026.04.24_00.19.16_tt_um_tqv_peripheral_harness.v`
+	- `dp-4/netlist/RUN_2026.04.24_00.19.16_tt_um_tqv_peripheral_harness.nl.v`
 - Final constraints:
-	- dp-4/constraints/RUN_2026.04.24_00.19.16_tt_um_tqv_peripheral_harness.sdc
+	- `dp-4/constraints/RUN_2026.04.24_00.19.16_tt_um_tqv_peripheral_harness.sdc`
 - Final sign-off reports:
-	- dp-4/signoff/RUN_2026.04.24_00.19.16_drc.rpt
-	- dp-4/signoff/RUN_2026.04.24_00.19.16_lvs.rpt
-	- dp-4/signoff/RUN_2026.04.24_00.19.16_sta_summary.rpt
-	- dp-4/signoff/RUN_2026.04.24_00.19.16_sta_checks.rpt
+	- `dp-4/signoff/RUN_2026.04.24_00.19.16_drc.rpt`
+	- `dp-4/signoff/RUN_2026.04.24_00.19.16_lvs.rpt`
+	- `dp-4/signoff/RUN_2026.04.24_00.19.16_sta_summary.rpt`
+	- `dp-4/signoff/RUN_2026.04.24_00.19.16_sta_checks.rpt`
 
 ## 9. Lessons Learned
-- Use scriptable run capture for every physical iteration; it prevents missing submission artifacts.
-- Separate sign-off interpretation from raw metrics.csv fields to avoid timing misreads.
-- Keep one canonical final run for submission clarity; archive exploratory runs only when needed.
+- A good hardware story is not just "it compiles"; it is traceable decisions across phases.
+- Security claims must survive physical implementation, not just simulation.
+- Tool-output ambiguity (especially timing fields) requires explicit reporting discipline.
+- Submission quality depends as much on curation and transparency as on raw metrics.
 
 ## 10. Appendix
 Reproducible final command:
 
-./scripts/run_dp4_tapeout.sh /home/abdulbasit/electrical-and-electronics-engineering/VLSI/tools/OpenLane --aes-block-bytes 1 --die-area "0 0 320.00 240.00" --pl-target-density 0.61 --cleanup
+`./scripts/run_dp4_tapeout.sh /home/abdulbasit/electrical-and-electronics-engineering/VLSI/tools/OpenLane --aes-block-bytes 1 --die-area "0 0 320.00 240.00" --pl-target-density 0.61 --cleanup`
+
+Related phase reports used to build this final narrative:
+- `dp-1/submission/DESIGN_REPORT.md`
+- `dp-2/reports/OPTIMIZATION_REPORT.md`
+- `dp-3/reports/SECURITY_EVALUATION_REPORT.md`
+- `dp-3/reports/PPA_OVERHEAD.md`
