@@ -78,17 +78,48 @@ if [[ ! -f "${RUN_ID_FILE}" ]]; then
 fi
 
 RUN_ID="$(cat "${RUN_ID_FILE}")"
+RUN_DIR="${DP1_DIR}/runs/${RUN_ID}"
 DEST_DIR="${DP4_DIR}/results/${RUN_ID}"
-mkdir -p "${DEST_DIR}"
+mkdir -p "${DEST_DIR}" "${DP4_DIR}/gds" "${DP4_DIR}/netlist" "${DP4_DIR}/constraints" "${DP4_DIR}/signoff"
+
+copy_if_exists() {
+  local src="$1"
+  local dst="$2"
+  if [[ -f "${src}" ]]; then
+    cp -f "${src}" "${dst}"
+  fi
+}
 
 cp -f "${RUN_ID_FILE}" "${DEST_DIR}/RUN_ID.txt"
-for f in metrics.csv SUMMARY.md manufacturability.rpt openlane_flow.log.txt; do
-  if [[ -f "${DP1_DIR}/runs/latest/${f}" ]]; then
-    cp -f "${DP1_DIR}/runs/latest/${f}" "${DEST_DIR}/${f}"
-  elif [[ -f "${DP1_DIR}/runs/latest/reports/${f}" ]]; then
-    cp -f "${DP1_DIR}/runs/latest/reports/${f}" "${DEST_DIR}/${f}"
+
+copy_if_exists "${DP1_DIR}/runs/latest/SUMMARY.md" "${DEST_DIR}/SUMMARY.md"
+copy_if_exists "${DP1_DIR}/runs/latest/openlane_flow.log.txt" "${DEST_DIR}/openlane_flow.log.txt"
+copy_if_exists "${RUN_DIR}/reports/metrics.csv" "${DEST_DIR}/metrics.csv"
+copy_if_exists "${RUN_DIR}/reports/manufacturability.rpt" "${DEST_DIR}/manufacturability.rpt"
+
+# Promote key files to canonical DP-4 submission folders.
+for gds in "${RUN_DIR}"/results/final/gds/*.gds; do
+  if [[ -f "${gds}" ]]; then
+    cp -f "${gds}" "${DP4_DIR}/gds/${RUN_ID}_$(basename "${gds}")"
   fi
 done
+
+for netlist in "${RUN_DIR}"/results/final/verilog/gl/*; do
+  if [[ -f "${netlist}" ]]; then
+    cp -f "${netlist}" "${DP4_DIR}/netlist/${RUN_ID}_$(basename "${netlist}")"
+  fi
+done
+
+for sdc in "${RUN_DIR}"/results/final/sdc/*.sdc; do
+  if [[ -f "${sdc}" ]]; then
+    cp -f "${sdc}" "${DP4_DIR}/constraints/${RUN_ID}_$(basename "${sdc}")"
+  fi
+done
+
+copy_if_exists "${RUN_DIR}/reports/signoff/drc.rpt" "${DP4_DIR}/signoff/${RUN_ID}_drc.rpt"
+copy_if_exists "${RUN_DIR}/reports/signoff/38-tt_um_tqv_peripheral_harness.lvs.rpt" "${DP4_DIR}/signoff/${RUN_ID}_lvs.rpt"
+copy_if_exists "${RUN_DIR}/reports/signoff/31-rcx_sta.summary.rpt" "${DP4_DIR}/signoff/${RUN_ID}_sta_summary.rpt"
+copy_if_exists "${RUN_DIR}/reports/signoff/31-rcx_sta.checks.rpt" "${DP4_DIR}/signoff/${RUN_ID}_sta_checks.rpt"
 
 {
   echo "date=$(date -Iseconds)"
