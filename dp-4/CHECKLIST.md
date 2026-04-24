@@ -31,6 +31,7 @@
 - [x] All DP-4 artifacts committed on `dp-4` branch
 - [x] Final tag created: `DP4-Submission`
 - [x] Tag pushed to remote
+- [x] GitHub release published for `DP4-Submission`
 
 ## Review Gate
 - [ ] Mentor review completed
