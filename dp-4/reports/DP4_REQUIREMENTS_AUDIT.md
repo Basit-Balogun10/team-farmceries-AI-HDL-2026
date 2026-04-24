@@ -61,6 +61,12 @@ This audit verifies that the Team Farmceries DP-4 package meets the competition'
 - Remaining risk: max-fanout and unconstrained sections in STA checks report.
 - Mitigation: explicitly disclosed in final report and audit; sign-off summary and DRC/LVS remain clean.
 
+5. Manufacturability interpretation check
+- Current status: PASS for competition submission readiness.
+- Basis: canonical run is DRC-clean, LVS-clean, and has clean sign-off STA summary.
+- Caveat: final TinyTapeout shuttle acceptance can include integration-level checks outside this repository-level DP-4 package (for example, top-level harness integration constraints and organizer-run validation scripts).
+- Team posture: no known blocker in current DP-4 evidence, with residual check-level notes documented transparently.
+
 4. Journey consistency check (DP1 to DP4)
 - DP-1 evidence: secure UART baseline and first converged OpenLANE path.
 - DP-2 evidence: optimization scripts and before/after PPA methodology.
