@@ -28,9 +28,9 @@
 - [x] Final project report updated in `dp-4/reports/FINAL_PROJECT_REPORT.md`
 
 ## Git and Release
-- [ ] All DP-4 artifacts committed on `dp-4` branch
-- [ ] Final tag created: `DP4-Submission`
-- [ ] Tag pushed to remote
+- [x] All DP-4 artifacts committed on `dp-4` branch
+- [x] Final tag created: `DP4-Submission`
+- [x] Tag pushed to remote
 
 ## Review Gate
 - [ ] Mentor review completed
