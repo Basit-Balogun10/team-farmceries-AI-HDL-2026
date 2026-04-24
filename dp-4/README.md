@@ -24,6 +24,7 @@ Canonical run chosen for submission:
 - `scripts/`: reproducible run orchestration (`run_dp4_tapeout.sh`)
 - `results/`: per-run metrics and command provenance
 - `reports/`: final report and compliance audit
+- `ai_logs/`: DP-4 Copilot conversation logs used to produce this package
 - `signoff/`: promoted DRC/LVS/STA reports
 - `netlist/`: final gate-level netlists
 - `gds/`: final GDSII output
